@@ -152,46 +152,81 @@
         <p id="viewBookAuthor" class="text-xs text-amber-300 tracking-wide font-semibold mt-0.5 uppercase">scritto da Battisilvia</p>
       </div>
 
-      <!-- MAIN PAGE STAGE DISPLAY -->
-      <div id="pageCanvas" class="book-stage w-full max-w-4xl rounded-2xl md:rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.7)] relative overflow-hidden flex flex-col justify-between border-4 border-slate-930 select-none bg-slate-900">
-        <!-- Background element fallback inside JS -->
-        <div id="canvasBackground" class="absolute inset-0 z-0 transition-all duration-500 bg-cover bg-center"></div>
-
-        <!-- ITEMS LAYER (STREET, HEROES, STICKERS ETC) -->
-        <div id="canvasItemsHolder" class="absolute inset-0 z-10 pointer-events-none">
-          <!-- Items injected dynamically via JS -->
+      <!-- NEW VIEW AND SIZE CUSTOMIZATION CONTROLS -->
+      <div class="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 bg-purple-950/40 p-3 rounded-2xl border border-purple-500/10 shadow-lg select-none">
+        
+        <!-- View Mode Selector -->
+        <div class="flex items-center gap-2 text-xs w-full sm:w-auto justify-center sm:justify-start">
+          <span class="text-purple-200 font-bold uppercase tracking-wider">Visualizzazione:</span>
+          <select id="viewModeSelector" onchange="changeViewMode()" class="bg-indigo-950 text-white text-xs font-semibold rounded-xl px-3 py-1.5 border border-purple-500/30 focus:ring-1 focus:ring-purple-400 focus:outline-none transition-all cursor-pointer">
+            <option value="single">📖 Una Pagina alla volta</option>
+            <option value="scroll" selected>📜 Tutto il Libro (Scorrimento Continuo)</option>
+          </select>
         </div>
 
-        <!-- TOP STORY TEXT ROW -->
-        <div id="narrativeTop" class="z-20 w-full p-4 md:p-6 transition-all duration-300">
-          <!-- narrative block injected if narrativePosition is top -->
+        <!-- Canvas Zoom/Size Customizer -->
+        <div class="flex items-center gap-2 text-xs w-full sm:w-auto justify-center sm:justify-end">
+          <span class="text-purple-200 font-bold uppercase tracking-wider">Dimensione Lettore:</span>
+          <select id="canvasSizeSelector" onchange="changeCanvasSize()" class="bg-indigo-950 text-white text-xs font-semibold rounded-xl px-3 py-1.5 border border-purple-500/30 focus:ring-1 focus:ring-purple-400 focus:outline-none transition-all cursor-pointer">
+            <option value="max-w-xl">Piccolo (W: 576px) 📐</option>
+            <option value="max-w-2xl">Compatto (W: 672px) 🎚️</option>
+            <option value="max-w-4xl" selected>Standard (W: 896px) 📏</option>
+            <option value="max-w-5xl">Grande (W: 1024px) 🛸</option>
+            <option value="max-w-7xl">Gigante (W: 1280px) 🌌</option>
+            <option value="max-w-full">Adatta allo Schermo (Fluid) 📱</option>
+          </select>
         </div>
 
-        <!-- BOTTOM STORY TEXT ROW -->
-        <div id="narrativeBottom" class="z-20 w-full p-4 md:p-6 mt-auto transition-all duration-300">
-          <!-- narrative block injected if narrativePosition is bottom -->
-        </div>
       </div>
 
-      <!-- PAGE NAVIGATION BUTTONS AND DOTS -->
-      <div class="w-full max-w-4xl flex items-center justify-between mt-6 px-1 md:px-4">
-        <!-- Prev block -->
-        <button onclick="changePage(-1)" id="prevBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-950/70 hover:bg-purple-900/80 border border-purple-500/20 text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-30 disabled:pointer-events-none disabled:scale-100">
-          <span>👈</span> Pagina Prima
-        </button>
+      <!-- CONTAINER 1: SINGLE PAGE SLIDER VIEW -->
+      <div id="singlePageContainer" class="w-full flex flex-col items-center hidden">
+        <!-- MAIN PAGE STAGE DISPLAY -->
+        <div id="pageCanvas" class="book-stage w-full max-w-4xl rounded-2xl md:rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.7)] relative overflow-hidden flex flex-col justify-between border-4 border-slate-930 select-none bg-slate-900">
+          <!-- Background element fallback inside JS -->
+          <div id="canvasBackground" class="absolute inset-0 z-0 transition-all duration-500 bg-cover bg-center"></div>
 
-        <!-- Dynamic Dots indicator / Pagination info -->
-        <div class="flex flex-col items-center gap-1.5">
-          <span id="pageIndexDisplay" class="text-xs font-mono font-bold tracking-widest text-amber-300 uppercase">Pagina 1 di 2</span>
-          <div id="paginationDots" class="flex items-center gap-1.5">
-            <!-- dots injected via JS -->
+          <!-- ITEMS LAYER (STREET, HEROES, STICKERS ETC) -->
+          <div id="canvasItemsHolder" class="absolute inset-0 z-10 pointer-events-none">
+            <!-- Items injected dynamically via JS -->
+          </div>
+
+          <!-- TOP STORY TEXT ROW -->
+          <div id="narrativeTop" class="z-20 w-full p-4 md:p-6 transition-all duration-300">
+            <!-- narrative block injected if narrativePosition is top -->
+          </div>
+
+          <!-- BOTTOM STORY TEXT ROW -->
+          <div id="narrativeBottom" class="z-20 w-full p-4 md:p-6 mt-auto transition-all duration-300">
+            <!-- narrative block injected if narrativePosition is bottom -->
           </div>
         </div>
 
-        <!-- Next block -->
-        <button onclick="changePage(1)" id="nextBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-950/70 hover:bg-purple-900/80 border border-purple-500/20 text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-30 disabled:pointer-events-none disabled:scale-100">
-          Pagina Dopo <span>👉</span>
-        </button>
+        <!-- PAGE NAVIGATION BUTTONS AND DOTS -->
+        <div id="singlePageNavRow" class="w-full max-w-4xl flex items-center justify-between mt-6 px-1 md:px-4">
+          <!-- Prev block -->
+          <button onclick="changePage(-1)" id="prevBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-950/70 hover:bg-purple-900/80 border border-purple-500/20 text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-30 disabled:pointer-events-none disabled:scale-100">
+            <span>👈</span> Pagina Prima
+          </button>
+
+          <!-- Dynamic Dots indicator / Pagination info -->
+          <div class="flex flex-col items-center gap-1.5">
+            <span id="pageIndexDisplay" class="text-xs font-mono font-bold tracking-widest text-amber-300 uppercase">Pagina 1 di 2</span>
+            <div id="paginationDots" class="flex items-center gap-1.5">
+              <!-- dots injected via JS -->
+            </div>
+          </div>
+
+          <!-- Next block -->
+          <button onclick="changePage(1)" id="nextBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-950/70 hover:bg-purple-900/80 border border-purple-500/20 text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-30 disabled:pointer-events-none disabled:scale-100">
+            Pagina Dopo <span>👉</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- CONTAINER 2: CONTINUOUS SCROLL VIEW -->
+      <div id="continuousScrollContainer" class="w-full flex flex-col items-center gap-12">
+        <!-- Pages stacked here dynamically -->
       </div>
 
     </div>
@@ -304,6 +339,8 @@
     // Global state
     let currentBook = BACKUP_SAMPLE_BOOK;
     let currentPageIndex = 0;
+    let currentViewMode = 'scroll'; // 'single' or 'scroll'
+    let canvasSizeClass = 'max-w-4xl'; // 'max-w-xl', 'max-w-2xl', 'max-w-4xl', 'max-w-5xl', 'max-w-7xl', 'max-w-full'
 
     // ----------------------------------------------------
     // INLINE STYLE EMOJI ASSISTANT ENGINE (Identical matching logic)
@@ -352,6 +389,7 @@
 
       // Add keyboard controls listener
       window.addEventListener('keydown', (e) => {
+        if (currentViewMode !== 'single') return;
         if (e.key === 'ArrowRight') changePage(1);
         if (e.key === 'ArrowLeft') changePage(-1);
       });
@@ -460,7 +498,11 @@
 
     function reloadBook() {
       currentPageIndex = 0;
-      renderCurrentPage();
+      if (currentViewMode === 'scroll') {
+        renderAllPagesScroll();
+      } else {
+        renderCurrentPage();
+      }
     }
 
     function resetToSample() {
@@ -489,7 +531,13 @@
       }
 
       hideError();
-      renderCurrentPage();
+      
+      // Switch view rendering based on mode selection
+      if (currentViewMode === 'scroll') {
+        renderAllPagesScroll();
+      } else {
+        renderCurrentPage();
+      }
     }
 
     function renderCurrentPage() {
@@ -809,6 +857,184 @@
     function hideError() {
       document.getElementById('errorMessage').classList.add('hidden');
       document.getElementById('readerStage').classList.remove('hidden');
+    }
+
+    // ----------------------------------------------------
+    // MULTI-VIEW & SIZE ADJUSTMENT HANDLERS
+    // ----------------------------------------------------
+    function changeViewMode() {
+      const mode = document.getElementById('viewModeSelector').value;
+      currentViewMode = mode;
+
+      const singleContainer = document.getElementById('singlePageContainer');
+      const scrollContainer = document.getElementById('continuousScrollContainer');
+
+      if (mode === 'single') {
+        singleContainer.classList.remove('hidden');
+        scrollContainer.classList.add('hidden');
+        renderCurrentPage();
+      } else {
+        singleContainer.classList.add('hidden');
+        scrollContainer.classList.remove('hidden');
+        renderAllPagesScroll();
+      }
+    }
+
+    function changeCanvasSize() {
+      const sizeSelector = document.getElementById('canvasSizeSelector');
+      const newSizeClass = sizeSelector.value;
+      canvasSizeClass = newSizeClass;
+
+      // Update single stage container size
+      const singleCanvas = document.getElementById('pageCanvas');
+      const singleNavRow = document.getElementById('singlePageNavRow');
+      const allowedSizes = ['max-w-xl', 'max-w-2xl', 'max-w-4xl', 'max-w-5xl', 'max-w-7xl', 'max-w-full'];
+
+      allowedSizes.forEach(sz => {
+        singleCanvas.classList.remove(sz);
+        if (singleNavRow) singleNavRow.classList.remove(sz);
+      });
+      singleCanvas.classList.add(newSizeClass);
+      if (singleNavRow) singleNavRow.classList.add(newSizeClass);
+
+      // Render again if in scroll mode to apply new classes properly
+      if (currentViewMode === 'scroll') {
+        renderAllPagesScroll();
+      }
+    }
+
+    function renderAllPagesScroll() {
+      const container = document.getElementById('continuousScrollContainer');
+      container.innerHTML = '';
+
+      if (!currentBook || !currentBook.pages || currentBook.pages.length === 0) {
+        container.innerHTML = `
+          <div class="text-center p-8 glass-panel rounded-2xl w-full max-w-md">
+            <p class="text-purple-200 font-bold">Nessuna pagina disponibile per questo libro.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const isPortrait = currentBook.orientation === 'portrait';
+
+      currentBook.pages.forEach((page, index) => {
+        // Outer wrapper
+        const pageWrapper = document.createElement('div');
+        pageWrapper.className = `w-full flex flex-col items-center gap-3 transition-all duration-300 ${canvasSizeClass}`;
+
+        // Top page index row
+        const indexHeader = document.createElement('div');
+        indexHeader.className = 'w-full flex items-center justify-between border-b border-purple-500/10 pb-2 px-2';
+        indexHeader.innerHTML = `
+          <span class="text-xs font-mono font-bold text-amber-300 tracking-wider">📜 PAGINA ${index + 1} DI ${currentBook.pages.length}</span>
+          <span class="text-[10px] text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded-full border border-purple-500/15">ID: ${page.id || 'p' + (index + 1)}</span>
+        `;
+        pageWrapper.appendChild(indexHeader);
+
+        // Standardized style page canvas
+        const canvas = document.createElement('div');
+        canvas.className = `book-stage w-full rounded-2xl md:rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.73)] relative overflow-hidden flex flex-col justify-between border-4 border-slate-930 select-none bg-slate-900`;
+        if (isPortrait) {
+          canvas.classList.add('portrait');
+        }
+
+        // Apply bg layer
+        const bgEl = document.createElement('div');
+        bgEl.className = 'absolute inset-0 z-0 bg-cover bg-center';
+        if (page.backgroundType === 'color') {
+          bgEl.style.backgroundColor = page.backgroundValue || '#1e293b';
+        } else if (page.backgroundType === 'premade') {
+          bgEl.style.backgroundImage = VIEW_PREMADE_BACKGROUNDS[page.backgroundValue] || VIEW_PREMADE_BACKGROUNDS.fairytale;
+        } else {
+          bgEl.style.backgroundImage = `url("${page.backgroundValue}")`;
+        }
+        canvas.appendChild(bgEl);
+
+        // Core dynamic items (characters & stickers) Layer
+        const itemsHolder = document.createElement('div');
+        itemsHolder.className = 'absolute inset-0 z-10 pointer-events-none';
+
+        // Narrative sections
+        const navTop = document.createElement('div');
+        navTop.className = 'z-20 w-full p-4 md:p-6';
+
+        const navBottom = document.createElement('div');
+        navBottom.className = 'z-20 w-full p-4 md:p-6 mt-auto';
+
+        // Render stories as rich styled tags
+        if (page.narrativeText && page.narrativePosition !== 'floating-hidden') {
+          const parsedTextHTML = parseArtisticNarrativeText(page.narrativeText);
+          let containerStyle = 'glass-panel p-4 md:p-5 rounded-2xl border border-white/5 shadow-lg';
+          if (page.narrativeStyle === 'parchment') {
+            containerStyle = 'narrative-parchment p-4 md:p-5 rounded-xl border-l-[6px] border-r-[6px] border-amber-950 shadow-md text-amber-950';
+          } else if (page.narrativeStyle === 'transparent') {
+            containerStyle = 'p-3 text-white text-center drop-shadow-lg';
+          }
+
+          const storyContent = `
+            <div class="${containerStyle} text-sm md:text-base leading-relaxed tracking-wide text-center">
+              ${parsedTextHTML}
+            </div>
+          `;
+
+          if (page.narrativePosition === 'top') {
+            navTop.innerHTML = storyContent;
+          } else {
+            navBottom.innerHTML = storyContent;
+          }
+        }
+
+        // Spawn items
+        const items = page.items || [];
+        items.forEach(item => {
+          if (item.type === 'character') {
+            const img = document.createElement('img');
+            img.src = item.src;
+            img.alt = item.name || "Elemento";
+            img.className = "absolute origin-center transition-all hover:scale-105 pointer-events-auto cursor-pointer";
+
+            let transformStr = `translate(-50%, -50%) scale(${item.scale || 1}) rotate(${item.rotation || 0}deg)`;
+            if (item.isFlipped) transformStr += " scaleX(-1)";
+
+            img.style.left = `${item.x}%`;
+            img.style.top = `${item.y}%`;
+            img.style.transform = transformStr;
+            img.style.width = "18%";
+            img.style.zIndex = item.zIndex || 2;
+            img.style.filter = "drop-shadow(2px 5px 10px rgba(0,0,0,0.45))";
+
+            itemsHolder.appendChild(img);
+          } else if (item.type === 'artistic-text') {
+            const div = document.createElement('div');
+            div.className = "absolute origin-center select-none pointer-events-auto";
+            div.style.left = `${item.x}%`;
+            div.style.top = `${item.y}%`;
+            div.style.zIndex = item.zIndex || 5;
+
+            const innerSpan = document.createElement('span');
+            let preset = item.stylePreset || 'holo';
+            const em = getInlineEmoji(item.text, preset);
+            innerSpan.innerText = `${em.left ? em.left + ' ' : ''}${item.text}${em.right ? ' ' + em.right : ''}`;
+
+            applyStickerPresetStyles(innerSpan, preset);
+
+            const customFontSz = item.fontSize ? `${item.fontSize}px` : '24px';
+            innerSpan.style.fontSize = `calc(${customFontSz} * 0.7)`;
+
+            div.appendChild(innerSpan);
+            div.style.transform = `translate(-50%, -50%) scale(${item.scale || 1}) rotate(${item.rotation || 0}deg)`;
+            itemsHolder.appendChild(div);
+          }
+        });
+
+        canvas.appendChild(itemsHolder);
+        canvas.appendChild(navTop);
+        canvas.appendChild(navBottom);
+
+        pageWrapper.appendChild(canvas);
+        container.appendChild(pageWrapper);
+      });
     }
 
     function toggleFullscreen() {
