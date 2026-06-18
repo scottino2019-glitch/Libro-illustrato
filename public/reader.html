@@ -44,8 +44,8 @@
 
     /* Premium Fullscreen styles for whole reader controls + scroll stage */
     #readerStage:fullscreen {
-      background-color: #0d061f !important;
-      padding: 1.5rem 1rem !important;
+      background-color: #0b0518 !important;
+      padding: 2.5rem 1rem !important;
       overflow-y: auto !important;
       width: 100% !important;
       height: 100% !important;
@@ -54,8 +54,8 @@
       align-items: center !important;
     }
     #readerStage:-webkit-full-screen {
-      background-color: #0d061f !important;
-      padding: 1.5rem 1rem !important;
+      background-color: #0b0518 !important;
+      padding: 2.5rem 1rem !important;
       overflow-y: auto !important;
       width: 100% !important;
       height: 100% !important;
@@ -72,16 +72,47 @@
       width: 100vw;
       height: 100vh;
       z-index: 9999;
-      background-color: #0a0319;
+      background-color: #0b0518;
       overflow-y: auto;
-      padding: 2.5rem 1rem;
+      padding: 3.5rem 1rem;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
+    /* Hide surrounding player chrome when in fullscreen or pseudo-fullscreen so ONLY "il foglio" (the sheets) are displayed */
+    #readerStage:fullscreen #readerTitleBanner,
+    #readerStage:fullscreen #readerControlsBar,
+    #readerStage.pseudo-fullscreen #readerTitleBanner,
+    #readerStage.pseudo-fullscreen #readerControlsBar {
+      display: none !important;
+    }
+
+    /* Force the book-stage pages to scale generously up on fullscreen */
+    #readerStage:fullscreen .book-stage,
+    #readerStage.pseudo-fullscreen .book-stage {
+      width: 90vw !important;
+      max-width: 110vh !important; /* Cap max width to keep it vertically fitting nicely inside screen height */
+      height: auto !important;
+      margin: 1.5rem auto !important;
+    }
+
+    #readerStage:fullscreen .book-stage.portrait,
+    #readerStage.pseudo-fullscreen .book-stage.portrait {
+      width: 65vw !important;
+      max-width: 65vh !important;
+      height: auto !important;
+      margin: 1.5rem auto !important;
+    }
+
+    /* Show the Close Button ONLY in fullscreen / pseudo-fullscreen */
+    #readerStage:fullscreen .fullscreen-close-btn,
+    #readerStage.pseudo-fullscreen .fullscreen-close-btn {
+      display: flex !important;
+    }
+
     #readerStage::backdrop {
-      background-color: #0d061f;
+      background-color: #0b0518;
     }
 
     /* Custom animated narrative parchment styling */
@@ -170,7 +201,7 @@
   </header>
 
   <!-- MAIN READER CONTAINER -->
-  <main class="flex-grow w-full max-w-5xl mx-auto flex flex-col justify-center items-center py-2 relative">
+  <main id="mainReader" class="flex-grow w-full max-w-5xl mx-auto flex flex-col justify-center items-center py-2 relative">
     
     <!-- Loading indicator -->
     <div id="loadingOverlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-3xl flex flex-col justify-center items-center z-40 hidden">
@@ -189,14 +220,19 @@
     <!-- MAIN BOOK STAGE VIEWPORTPORT -->
     <div id="readerStage" class="w-full relative flex flex-col items-center">
       
+      <!-- Always on-top Floating Exit button for fullscreen/pseudo-fullscreen modes -->
+      <button onclick="toggleFullscreen()" class="fullscreen-close-btn hidden fixed top-4 right-4 z-[999999] bg-gradient-to-r from-red-650 to-rose-700 hover:from-red-500 hover:to-rose-600 text-[#FAF9F6] border border-red-500/20 px-4 py-2.5 rounded-xl font-sans text-xs font-bold shadow-2xl items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95 select-none">
+        <span>❌</span> Chiudi Ingrandimento
+      </button>
+
       <!-- Title & Author banner -->
-      <div class="text-center mb-3">
+      <div id="readerTitleBanner" class="text-center mb-3">
         <h2 id="viewBookTitle" class="text-2xl font-black md:text-3xl text-white tracking-tight drop-shadow">Esempio Incantato</h2>
         <p id="viewBookAuthor" class="text-xs text-amber-300 tracking-wide font-semibold mt-0.5 uppercase">scritto da Battisilvia</p>
       </div>
 
       <!-- NEW VIEW AND SIZE CUSTOMIZATION CONTROLS -->
-      <div class="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 bg-purple-950/40 p-3 rounded-2xl border border-purple-500/10 shadow-lg select-none">
+      <div id="readerControlsBar" class="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 bg-purple-950/40 p-3 rounded-2xl border border-purple-500/10 shadow-lg select-none">
         
         <!-- View Mode Selector -->
         <div class="flex items-center gap-2 text-xs w-full sm:w-auto justify-center sm:justify-start">
@@ -366,17 +402,248 @@
       ]
     };
 
-    // Mapping key premade background values of the app to stunning Tailwind / CSS gradients
+    // Helper to wrap SVG in safe base64/URI encoding for Javascript usage
+    const svgToDataUrl = (svgContent) => {
+      return `data:image/svg+xml;utf8,${encodeURIComponent(svgContent.trim())}`;
+    };
+
+    // Mapping key premade background values of the app to stunning premium SVGs or fallbacks
     const VIEW_PREMADE_BACKGROUNDS = {
       fairytale: "linear-gradient(to top, #fbc2eb 0%, #a6c1ee 100%)", // Fairy pastel pink blue
       sky: "radial-gradient(circle at 50% 120%, #4facfe 0%, #00f2fe 100%)", // Sunny cloud blue
       darksky: "radial-gradient(circle at 50% 30%, #0f172a 0%, #020617 100%)", // Starry space midnight
-      forest: "linear-gradient(to bottom, #11998e 0%, #38ef7d 100%)", // Forest lush green glow
-      castle: "linear-gradient(to bottom, #141e30 0%, #243b55 100%)", // Deep twilight blue medieval
       candy: "linear-gradient(to top, #fdcbf1 0%, #e6dee9 100%)", // Sweet candy mountain pastel pink
-      underwater: "radial-gradient(circle, #0052d4 0%, #4364f7 50%, #6fb1fc 100%)", // Sea bubble glow
       desert: "linear-gradient(120deg, #f6d365 0%, #fda085 100%)", // Sandy sunset warm
-      volcano: "radial-gradient(circle, #f12711 0%, #f5af19 100%)" // Lava lava crackly orange-black
+      volcano: "radial-gradient(circle, #f12711 0%, #f5af19 100%)", // Lava lava crackly orange-black
+
+      // Premium SVGs matching the editor's design perfectly
+      forest_twilight: `url("${svgToDataUrl(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg_grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0b0d1b"/>
+      <stop offset="40%" stop-color="#191c3d"/>
+      <stop offset="100%" stop-color="#342b5c"/>
+    </linearGradient>
+    <linearGradient id="hill_back" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#211a3b"/>
+      <stop offset="100%" stop-color="#141026"/>
+    </linearGradient>
+    <linearGradient id="hill_front" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#112521"/>
+      <stop offset="100%" stop-color="#08100f"/>
+    </linearGradient>
+    <radialGradient id="moon_glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fffebb" stop-opacity="0.8"/>
+      <stop offset="40%" stop-color="#fffaa0" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#fffaa0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg_grad)"/>
+  <circle cx="650" cy="150" r="100" fill="url(#moon_glow)"/>
+  <circle cx="650" cy="150" r="50" fill="#fffee0"/>
+  <circle cx="100" cy="80" r="2" fill="#fff" opacity="0.8"/>
+  <circle cx="180" cy="140" r="1.5" fill="#fff" opacity="0.6"/>
+  <circle cx="320" cy="90" r="3" fill="#fffae0" opacity="0.9"/>
+  <circle cx="450" cy="110" r="1" fill="#fff" opacity="0.5"/>
+  <circle cx="70" cy="220" r="2.5" fill="#fff" opacity="0.7"/>
+  <circle cx="280" cy="250" r="2" fill="#fff" opacity="0.4"/>
+  <polygon points="320,70 323,76 330,76 325,80 327,87 320,83 313,87 315,80 310,76 317,76" fill="#fff" opacity="0.4"/>
+  <path d="M-100,600 L-100,450 Q120,380 300,440 T800,380 L800,600 Z" fill="url(#hill_back)"/>
+  <path d="M-50,600 L-50,490 Q200,460 450,520 T950,470 L950,600 Z" fill="#141930"/>
+  <polygon points="120,440 100,490 140,490" fill="#0d1121" />
+  <polygon points="120,410 105,450 135,450" fill="#0d1121" />
+  <polygon points="160,450 145,502 175,502" fill="#0d1121" />
+  <path d="M-50,600 L-50,520 Q150,560 350,510 T850,535 L850,600 Z" fill="url(#hill_front)"/>
+  <circle cx="150" cy="480" r="4" fill="#dfff80" filter="drop-shadow(0 0 4px #dfff80)" opacity="0.9"/>
+  <circle cx="380" cy="460" r="3" fill="#dfff80" filter="drop-shadow(0 0 3px #dfff80)" opacity="0.8"/>
+  <circle cx="520" cy="495" r="5" fill="#dfff80" filter="drop-shadow(0 0 5px #dfff80)" opacity="0.95"/>
+  <circle cx="680" cy="470" r="3.5" fill="#dfff80" filter="drop-shadow(0 0 4px #dfff80)" opacity="0.7"/>
+</svg>
+`)}")`,
+
+      forest: `url("${svgToDataUrl(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg_grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0b0d1b"/>
+      <stop offset="40%" stop-color="#191c3d"/>
+      <stop offset="100%" stop-color="#342b5c"/>
+    </linearGradient>
+    <linearGradient id="hill_back" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#211a3b"/>
+      <stop offset="100%" stop-color="#141026"/>
+    </linearGradient>
+    <linearGradient id="hill_front" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#112521"/>
+      <stop offset="100%" stop-color="#08100f"/>
+    </linearGradient>
+    <radialGradient id="moon_glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fffebb" stop-opacity="0.8"/>
+      <stop offset="40%" stop-color="#fffaa0" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#fffaa0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg_grad)"/>
+  <circle cx="650" cy="150" r="100" fill="url(#moon_glow)"/>
+  <circle cx="650" cy="150" r="50" fill="#fffee0"/>
+  <circle cx="100" cy="80" r="2" fill="#fff" opacity="0.8"/>
+  <circle cx="180" cy="140" r="1.5" fill="#fff" opacity="0.6"/>
+  <circle cx="320" cy="90" r="3" fill="#fffae0" opacity="0.9"/>
+  <circle cx="450" cy="110" r="1" fill="#fff" opacity="0.5"/>
+  <circle cx="70" cy="220" r="2.5" fill="#fff" opacity="0.7"/>
+  <circle cx="280" cy="250" r="2" fill="#fff" opacity="0.4"/>
+  <polygon points="320,70 323,76 330,76 325,80 327,87 320,83 313,87 315,80 310,76 317,76" fill="#fff" opacity="0.4"/>
+  <path d="M-100,600 L-100,450 Q120,380 300,440 T800,380 L800,600 Z" fill="url(#hill_back)"/>
+  <path d="M-50,600 L-50,490 Q200,460 450,520 T950,470 L950,600 Z" fill="#141930"/>
+  <polygon points="120,440 100,490 140,490" fill="#0d1121" />
+  <polygon points="120,410 105,450 135,450" fill="#0d1121" />
+  <polygon points="160,450 145,502 175,502" fill="#0d1121" />
+  <path d="M-50,600 L-50,520 Q150,560 350,510 T850,535 L850,600 Z" fill="url(#hill_front)"/>
+  <circle cx="150" cy="480" r="4" fill="#dfff80" filter="drop-shadow(0 0 4px #dfff80)" opacity="0.9"/>
+  <circle cx="380" cy="460" r="3" fill="#dfff80" filter="drop-shadow(0 0 3px #dfff80)" opacity="0.8"/>
+  <circle cx="520" cy="495" r="5" fill="#dfff80" filter="drop-shadow(0 0 5px #dfff80)" opacity="0.95"/>
+  <circle cx="680" cy="470" r="3.5" fill="#dfff80" filter="drop-shadow(0 0 4px #dfff80)" opacity="0.7"/>
+</svg>
+`)}")`,
+
+      cloud_castle: `url("${svgToDataUrl(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="sky_pink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8b6ce"/>
+      <stop offset="50%" stop-color="#eed1df"/>
+      <stop offset="100%" stop-color="#bce6fa"/>
+    </linearGradient>
+    <linearGradient id="castle_grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a684f2" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#5551bd" stop-opacity="0.95"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#sky_pink)"/>
+  <path d="M-200,600 A800,800 0 0,1 1000,600" fill="none" stroke="#fff" stroke-width="12" opacity="0.15"/>
+  <path d="M-170,600 A770,770 0 0,1 970,600" fill="none" stroke="#fce3ec" stroke-width="8" opacity="0.2"/>
+  <polygon points="150,120 153,124 158,124 154,127 156,132 150,129 144,132 146,127 142,124 147,124" fill="#fff" opacity="0.9"/>
+  <polygon points="620,80 622,83 627,83 623,85 625,90 620,87 615,90 617,85 613,83 618,83" fill="#fff" opacity="0.8"/>
+  <polygon points="350,190 351,193 355,193 352,195 353,199 350,197 347,199 348,195 345,193 349,193" fill="#fffae8" opacity="0.85"/>
+  <g transform="translate(250, 160)">
+    <rect x="70" y="100" width="160" height="150" fill="url(#castle_grad)"/>
+    <rect x="40" y="80" width="40" height="170" fill="url(#castle_grad)"/>
+    <rect x="220" y="80" width="40" height="170" fill="url(#castle_grad)"/>
+    <rect x="120" y="40" width="60" height="210" fill="url(#castle_grad)"/>
+    <polygon points="40,80 60,30 80,80" fill="#fb7185"/>
+    <polygon points="220,80 240,30 260,80" fill="#fb7185"/>
+    <polygon points="120,40 150,-20 180,40" fill="#f43f5e"/>
+    <polygon points="150,-20 175,-12 150,-5" fill="#facc15" />
+  </g>
+  <ellipse cx="100" cy="450" rx="150" ry="80" fill="#fff" opacity="0.9"/>
+  <ellipse cx="250" cy="490" rx="180" ry="90" fill="#fff" opacity="0.95"/>
+  <ellipse cx="550" cy="460" rx="200" ry="110" fill="#fff" opacity="0.9"/>
+  <ellipse cx="750" cy="420" rx="130" ry="70" fill="#fff" opacity="0.85"/>
+  <circle cx="210" cy="430" r="60" fill="#fff" opacity="0.95"/>
+  <circle cx="330" cy="410" r="75" fill="#fff" opacity="0.98"/>
+  <circle cx="450" cy="430" r="70" fill="#fff" opacity="0.95"/>
+  <circle cx="610" cy="380" r="65" fill="#fff" opacity="0.9"/>
+</svg>
+`)}")`,
+
+      castle: `url("${svgToDataUrl(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="sky_pink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8b6ce"/>
+      <stop offset="50%" stop-color="#eed1df"/>
+      <stop offset="100%" stop-color="#bce6fa"/>
+    </linearGradient>
+    <linearGradient id="castle_grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a684f2" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#5551bd" stop-opacity="0.95"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#sky_pink)"/>
+  <path d="M-200,600 A800,800 0 0,1 1000,600" fill="none" stroke="#fff" stroke-width="12" opacity="0.15"/>
+  <path d="M-170,600 A770,770 0 0,1 970,600" fill="none" stroke="#fce3ec" stroke-width="8" opacity="0.2"/>
+  <polygon points="150,120 153,124 158,124 154,127 156,132 150,129 144,132 146,127 142,124 147,124" fill="#fff" opacity="0.9"/>
+  <polygon points="620,80 622,83 627,83 623,85 625,90 620,87 615,90 617,85 613,83 618,83" fill="#fff" opacity="0.8"/>
+  <polygon points="350,190 351,193 355,193 352,195 353,199 350,197 347,199 348,195 345,193 349,193" fill="#fffae8" opacity="0.85"/>
+  <g transform="translate(250, 160)">
+    <rect x="70" y="100" width="160" height="150" fill="url(#castle_grad)"/>
+    <rect x="40" y="80" width="40" height="170" fill="url(#castle_grad)"/>
+    <rect x="220" y="80" width="40" height="170" fill="url(#castle_grad)"/>
+    <rect x="120" y="40" width="60" height="210" fill="url(#castle_grad)"/>
+    <polygon points="40,80 60,30 80,80" fill="#fb7185"/>
+    <polygon points="220,80 240,30 260,80" fill="#fb7185"/>
+    <polygon points="120,40 150,-20 180,40" fill="#f43f5e"/>
+    <polygon points="150,-20 175,-12 150,-5" fill="#facc15" />
+  </g>
+  <ellipse cx="100" cy="450" rx="150" ry="80" fill="#fff" opacity="0.9"/>
+  <ellipse cx="250" cy="490" rx="180" ry="90" fill="#fff" opacity="0.95"/>
+  <ellipse cx="550" cy="460" rx="200" ry="110" fill="#fff" opacity="0.9"/>
+  <ellipse cx="750" cy="420" rx="130" ry="70" fill="#fff" opacity="0.85"/>
+  <circle cx="210" cy="430" r="60" fill="#fff" opacity="0.95"/>
+  <circle cx="330" cy="410" r="75" fill="#fff" opacity="0.98"/>
+  <circle cx="450" cy="430" r="70" fill="#fff" opacity="0.95"/>
+  <circle cx="610" cy="380" r="65" fill="#fff" opacity="0.9"/>
+</svg>
+`)}")`,
+
+      underwater: `url("${svgToDataUrl(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="sea_grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="40%" stop-color="#0369a1"/>
+      <stop offset="80%" stop-color="#0f4c75"/>
+      <stop offset="100%" stop-color="#142c42"/>
+    </linearGradient>
+    <linearGradient id="kelp_grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#sea_grad)"/>
+  <polygon points="0,0 200,0 350,600 0,600" fill="#38bdf8" opacity="0.15" />
+  <polygon points="150,0 380,0 550,600 180,600" fill="#38bdf8" opacity="0.1" />
+  <polygon points="350,0 500,0 720,600 450,600" fill="#38bdf8" opacity="0.08" />
+  <circle cx="150" cy="500" r="12" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
+  <circle cx="160" cy="495" r="4" fill="#fff" opacity="0.5"/>
+  <circle cx="320" cy="320" r="8" fill="none" stroke="#fff" stroke-width="1.2" opacity="0.5"/>
+  <circle cx="324" cy="316" r="2.5" fill="#fff" opacity="0.4"/>
+  <circle cx="480" cy="220" r="16" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.3"/>
+  <circle cx="486" cy="212" r="5" fill="#fff" opacity="0.4"/>
+  <circle cx="580" cy="420" r="10" fill="none" stroke="#fff" stroke-width="1.2" opacity="0.45"/>
+  <path d="M-50,600 L-50,540 Q150,560 380,530 T850,550 L850,600 Z" fill="#eab308" opacity="0.9" />
+  <path d="M-50,600 L-50,560 Q250,530 500,570 T850,565 L850,600 Z" fill="#ca8a04" opacity="0.95" />
+  <path d="M60,570 Q80,430 40,300 Q80,450 70,570 Z" fill="url(#kelp_grad)"/>
+  <path d="M120,580 Q100,400 140,250 Q120,420 130,580 Z" fill="url(#kelp_grad)" opacity="0.8"/>
+  <path d="M720,570 Q700,410 740,280 Q720,443 730,570 Z" fill="url(#kelp_grad)"/>
+  <path d="M670,583 Q690,440 660,330 Q680,450 680,583 Z" fill="url(#kelp_grad)" opacity="0.9"/>
+</svg>
+`)}")`,
+
+      antique_parchment: `url("${svgToDataUrl(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <radialGradient id="parchment_grad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#fff8eb"/>
+      <stop offset="60%" stop-color="#fdf0d5"/>
+      <stop offset="100%" stop-color="#ddc39d"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="600" fill="#bb9a74"/>
+  <rect x="25" y="25" width="750" height="550" rx="10" ry="10" fill="none" stroke="#664d33" stroke-width="4" stroke-dasharray="8 8" opacity="0.6"/>
+  <rect x="35" y="35" width="730" height="530" rx="8" ry="8" fill="url(#parchment_grad)"/>
+  <path d="M45,75 L45,45 L75,45" fill="none" stroke="#664d33" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <path d="M715,45 L745,45 L745,75" fill="none" stroke="#664d33" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <path d="M45,515 L45,545 L75,545" fill="none" stroke="#664d33" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <path d="M715,545 L745,545 L745,515" fill="none" stroke="#664d33" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <line x1="80" y1="120" x2="720" y2="120" stroke="#a48c66" stroke-width="1" stroke-dasharray="4 4" opacity="0.4"/>
+  <line x1="80" y1="200" x2="720" y2="200" stroke="#a48c66" stroke-width="1" stroke-dasharray="4 4" opacity="0.4"/>
+  <line x1="80" y1="280" x2="720" y2="280" stroke="#a48c66" stroke-width="1" stroke-dasharray="4 4" opacity="0.4"/>
+  <line x1="80" y1="360" x2="720" y2="360" stroke="#a48c66" stroke-width="1" stroke-dasharray="4 4" opacity="0.4"/>
+  <line x1="80" y1="440" x2="720" y2="440" stroke="#a48c66" stroke-width="1" stroke-dasharray="4 4" opacity="0.4"/>
+</svg>
+`)}")`
     };
 
     // Global state
@@ -947,6 +1214,13 @@
       });
       singleCanvas.classList.add(newSizeClass);
       if (singleNavRow) singleNavRow.classList.add(newSizeClass);
+
+      // Update main container size wrapper to allow widescreen growth
+      const mainReader = document.getElementById('mainReader');
+      if (mainReader) {
+        allowedSizes.forEach(sz => mainReader.classList.remove(sz));
+        mainReader.classList.add(newSizeClass);
+      }
 
       // Render again if in scroll mode to apply new classes properly
       if (currentViewMode === 'scroll') {

@@ -67,19 +67,33 @@ export async function exportBookToPDF(
     container.style.fontFamily = 'Inter, sans-serif';
 
     // Apply Background
+    container.style.position = 'relative';
     if (page.backgroundType === 'color') {
       container.style.backgroundColor = page.backgroundValue || '#F3F4F6';
-    } else if (page.backgroundType === 'image') {
-      container.style.backgroundImage = `url("${page.backgroundValue}")`;
-      container.style.backgroundSize = 'cover';
-      container.style.backgroundPosition = 'center';
-    } else if (page.backgroundType === 'premade') {
-      const premade = PREMADE_BACKGROUNDS.find((bg) => bg.id === page.backgroundValue);
-      if (premade) {
-        container.style.backgroundImage = `url("${premade.src}")`;
-        container.style.backgroundSize = '100% 100%';
-        container.style.backgroundPosition = 'center';
-        container.style.backgroundRepeat = 'no-repeat';
+    } else if (page.backgroundType === 'image' || page.backgroundType === 'premade') {
+      const bgImg = document.createElement('img');
+      bgImg.style.position = 'absolute';
+      bgImg.style.left = '0';
+      bgImg.style.top = '0';
+      bgImg.style.width = '100%';
+      bgImg.style.height = '100%';
+      bgImg.style.objectFit = 'cover';
+      bgImg.style.zIndex = '0';
+      bgImg.setAttribute('referrerpolicy', 'no-referrer');
+      
+      let bgSrc = '';
+      if (page.backgroundType === 'image') {
+        bgSrc = page.backgroundValue;
+      } else {
+        const premade = PREMADE_BACKGROUNDS.find((bg) => bg.id === page.backgroundValue);
+        if (premade) {
+          bgSrc = premade.src;
+        }
+      }
+
+      if (bgSrc) {
+        bgImg.src = bgSrc;
+        container.appendChild(bgImg);
       } else {
         container.style.backgroundColor = '#F3F4F6';
       }
@@ -365,8 +379,22 @@ export async function exportBookToPDF(
 
     document.body.appendChild(container);
 
-    // Wait a brief moment for any images to render
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    // Wait for all images inside the container (background + character stickers) to render completely
+    const imagesToLoad = Array.from(container.querySelectorAll('img'));
+    await Promise.all([
+      new Promise((resolve) => setTimeout(resolve, 350)), // Settle layout delay
+      ...imagesToLoad.map(
+        (img) =>
+          new Promise<void>((resolve) => {
+            if (img.complete) {
+              resolve();
+            } else {
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            }
+          })
+      ),
+    ]);
 
     try {
       // Capture off-screen page with high resolution scale
