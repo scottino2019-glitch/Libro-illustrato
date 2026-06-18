@@ -1,0 +1,6 @@
+{
+  "name": "Crea Libri Illustrati",
+  "description": "Crea libri illustrati interattivi integrando disegni e testo, sperimenta con font artistici personalizzati, importa sfondi e personaggi, ed esporta il tuo capolavoro in formato PDF.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

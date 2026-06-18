@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lettore Magico dei Cantastorie 📖</title>
+  
+  <!-- Tailwind CSS CDN for pristine styling and modern look -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font pairings to match the premium app experience -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
+
+  <style>
+    /* Styling configuration */
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: radial-gradient(circle at 50% 50%, #1e112a 0%, #0d0614 100%);
+      color: #f3f4f6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .glass-panel {
+      background: rgba(26, 15, 38, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    /* Premium Page aspect ratios */
+    .book-stage {
+      aspect-ratio: 4 / 3; /* Landscape standard default */
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .book-stage.portrait {
+      aspect-ratio: 3 / 4; /* Portrait scale */
+      max-height: 80vh;
+    }
+
+    /* Custom animated narrative parchment styling */
+    .narrative-parchment {
+      background-image: radial-gradient(#fcf6e8 60%, #e6d3af 100%);
+      color: #2c1a04;
+      box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.35), inset 0px 0px 10px rgba(124, 90, 52, 0.15);
+      border-left: 5px solid #7c5a34;
+      border-right: 5px solid #7c5a34;
+      font-family: 'Georgia', serif;
+    }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Sticker Micro-animations */
+    .sticker-hover {
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .sticker-hover:hover {
+      transform: scale(1.1) rotate(2deg);
+      filter: drop-shadow(0px 8px 15px rgba(0,0,0,0.4));
+    }
+  </style>
+</head>
+<body class="flex flex-col justify-between p-3 md:p-6 min-h-screen">
+
+  <!-- TOP HEADER & CONTROLS CONTROL NAV -->
+  <header class="w-full max-w-5xl mx-auto glass-panel rounded-2xl p-4 mb-4 flex flex-col md:flex-row items-center justify-between gap-4 z-50">
+    <div class="flex items-center gap-3">
+      <div class="text-3xl">📖</div>
+      <div>
+        <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 via-pink-400 to-amber-300 bg-clip-text text-transparent">
+          Cantastorie Player
+        </h1>
+        <p class="text-xs text-purple-200/60 font-medium">Lettore Standalone Interattivo per Libri JSON</p>
+      </div>
+    </div>
+
+    <!-- Dropdown Selector and input mechanisms -->
+    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+      
+      <!-- List Index for Online Books -->
+      <label class="text-xs text-purple-200 font-bold hidden lg:inline">Indice:</label>
+      <select id="bookSelector" class="bg-indigo-950/80 text-white text-sm font-semibold rounded-xl px-3 py-2 border border-purple-500/25 focus:ring-2 focus:ring-purple-400 focus:outline-none transition-all cursor-pointer max-w-[200px]" onchange="loadSelectedBook()">
+        <option value="SAMPLE_LOCAL">✨ Libro di Esempio (Già Incluso)</option>
+        <option value="CUSTOM_URL">🔗 Digita un Link personalizzato (Online)...</option>
+        <option value="UPLOAD_FILE">📁 Carica File da questo dispositivo...</option>
+      </select>
+
+      <!-- URL Input (hidden by default) -->
+      <div id="urlInputContainer" class="hidden flex items-center gap-1.5">
+        <input type="url" id="customBookUrl" placeholder="https://tuosito.com/libro.json" class="bg-slate-900 border border-purple-500/30 text-white text-xs rounded-xl px-3 py-2 w-48 md:w-60 focus:outline-none focus:ring-2 focus:ring-purple-400">
+        <button onclick="fetchBookFromCustomUrl()" class="bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs px-3 py-2 rounded-xl transition-all">Carica</button>
+      </div>
+
+      <!-- File Input (hidden triggers manually) -->
+      <input type="file" id="localBookUploader" accept=".json,application/json,text/json,text/plain,.txt" class="hidden" onchange="handleLocalFileUpload(event)">
+      <button id="uploadBtn" onclick="triggerFileUpload()" class="hidden bg-slate-800 hover:bg-slate-700 text-purple-200 font-semibold text-xs px-3 py-2 rounded-xl border border-purple-500/10 transition-all">
+        📂 Carica File
+      </button>
+
+      <!-- Reset & Refresh -->
+      <button onclick="reloadBook()" class="p-2 rounded-xl hover:bg-purple-500/15 text-purple-300 transition-all" title="Ricarica libro corrente">
+        🔄
+      </button>
+
+      <!-- Fullscreen toggle -->
+      <button onclick="toggleFullscreen()" class="p-2 rounded-xl hover:bg-purple-500/15 text-purple-300 transition-all" title="Schermo intero">
+        📺
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN READER CONTAINER -->
+  <main class="flex-grow w-full max-w-5xl mx-auto flex flex-col justify-center items-center py-2 relative">
+    
+    <!-- Loading indicator -->
+    <div id="loadingOverlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-3xl flex flex-col justify-center items-center z-40 hidden">
+      <div class="animate-spin text-5xl mb-3">🔮</div>
+      <p class="text-purple-200 font-bold tracking-wide">Caricamento del Libro...</p>
+    </div>
+
+    <!-- Error message wrapper -->
+    <div id="errorMessage" class="hidden w-full max-w-md p-6 bg-red-950/80 border border-red-500/40 rounded-2xl text-center glass-panel z-10">
+      <div class="text-4xl mb-3">⚠️</div>
+      <h3 class="text-red-200 font-bold text-lg mb-1">Impossibile Caricare il Libro</h3>
+      <p id="errorText" class="text-red-350 text-xs mb-4">Verifica la connessione o l'integrità del file JSON.</p>
+      <button onclick="resetToSample()" class="bg-red-900 hover:bg-red-800 text-white rounded-xl text-xs font-semibold px-4 py-2 transition-all">Torna all'esempio</button>
+    </div>
+
+    <!-- MAIN BOOK STAGE VIEWPORTPORT -->
+    <div id="readerStage" class="w-full relative flex flex-col items-center">
+      
+      <!-- Title & Author banner -->
+      <div class="text-center mb-3">
+        <h2 id="viewBookTitle" class="text-2xl font-black md:text-3xl text-white tracking-tight drop-shadow">Esempio Incantato</h2>
+        <p id="viewBookAuthor" class="text-xs text-amber-300 tracking-wide font-semibold mt-0.5 uppercase">scritto da Battisilvia</p>
+      </div>
+
+      <!-- MAIN PAGE STAGE DISPLAY -->
+      <div id="pageCanvas" class="book-stage w-full max-w-4xl rounded-2xl md:rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.7)] relative overflow-hidden flex flex-col justify-between border-4 border-slate-930 select-none bg-slate-900">
+        <!-- Background element fallback inside JS -->
+        <div id="canvasBackground" class="absolute inset-0 z-0 transition-all duration-500 bg-cover bg-center"></div>
+
+        <!-- ITEMS LAYER (STREET, HEROES, STICKERS ETC) -->
+        <div id="canvasItemsHolder" class="absolute inset-0 z-10 pointer-events-none">
+          <!-- Items injected dynamically via JS -->
+        </div>
+
+        <!-- TOP STORY TEXT ROW -->
+        <div id="narrativeTop" class="z-20 w-full p-4 md:p-6 transition-all duration-300">
+          <!-- narrative block injected if narrativePosition is top -->
+        </div>
+
+        <!-- BOTTOM STORY TEXT ROW -->
+        <div id="narrativeBottom" class="z-20 w-full p-4 md:p-6 mt-auto transition-all duration-300">
+          <!-- narrative block injected if narrativePosition is bottom -->
+        </div>
+      </div>
+
+      <!-- PAGE NAVIGATION BUTTONS AND DOTS -->
+      <div class="w-full max-w-4xl flex items-center justify-between mt-6 px-1 md:px-4">
+        <!-- Prev block -->
+        <button onclick="changePage(-1)" id="prevBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-950/70 hover:bg-purple-900/80 border border-purple-500/20 text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-30 disabled:pointer-events-none disabled:scale-100">
+          <span>👈</span> Pagina Prima
+        </button>
+
+        <!-- Dynamic Dots indicator / Pagination info -->
+        <div class="flex flex-col items-center gap-1.5">
+          <span id="pageIndexDisplay" class="text-xs font-mono font-bold tracking-widest text-amber-300 uppercase">Pagina 1 di 2</span>
+          <div id="paginationDots" class="flex items-center gap-1.5">
+            <!-- dots injected via JS -->
+          </div>
+        </div>
+
+        <!-- Next block -->
+        <button onclick="changePage(1)" id="nextBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-950/70 hover:bg-purple-900/80 border border-purple-500/20 text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-30 disabled:pointer-events-none disabled:scale-100">
+          Pagina Dopo <span>👉</span>
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- STANDALONE FOOTER -->
+  <footer class="w-full text-center py-2 text-xs text-purple-200/30 font-medium">
+    Magical Cantastorie Standalone Reader App Engine &bull; Nessuna dipendenza complessa &bull; Pronto per l'iframe!
+  </footer>
+
+  <!-- DYNAMIC LOGIC SCRIPT (ALL-IN-ONE) -->
+  <script>
+    // ----------------------------------------------------
+    // INLINE SAMPLE BOOK JSON FOR TESTING OFFLINE IMMEDIATELY
+    // ----------------------------------------------------
+    const BACKUP_SAMPLE_BOOK = {
+      title: "Il Viaggio del Piccolo Drago",
+      author: "Cantastorie AI",
+      orientation: "landscape",
+      pages: [
+        {
+          id: "page1",
+          backgroundType: "premade",
+          backgroundValue: "forest", // Maps to custom css gradient below
+          narrativeText: "C'era una volta un *comic:MAGICO* draghetto di nome *gold:Sparky* che viveva in una foresta incantata. Il suo sogno preferito era soffiare del vero *comic:FUOCO*!",
+          narrativePosition: "top",
+          narrativeStyle: "parchment",
+          items: [
+            {
+              id: "draghetto",
+              type: "character",
+              x: 18,
+              y: 42,
+              scale: 1.2,
+              rotation: -5,
+              zIndex: 3,
+              name: "Drago Rosa Gioioso",
+              isFlipped: false,
+              // We use a small placeholder/premade cartoon dragon icon or generic illustration
+              src: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=300&auto=format&fit=crop"
+            },
+            {
+              id: "word_puff",
+              type: "artistic-text",
+              x: 52,
+              y: 35,
+              scale: 1.1,
+              rotation: 12,
+              zIndex: 5,
+              text: "BOOM! SBRUM!",
+              color: "#ffc107",
+              fontSize: 28,
+              stylePreset: "comic"
+            }
+          ]
+        },
+        {
+          id: "page2",
+          backgroundType: "premade",
+          backgroundValue: "castle",
+          narrativeText: "Incontrò la *fairy:Fata:Azzurra* vicino al bellissimo *antique:Regno:del:Trono*. Insieme risero tra tante *bubble:BOLLICINE* felici nel cielo stellato!",
+          narrativePosition: "bottom",
+          narrativeStyle: "banner",
+          items: [
+            {
+              id: "scintille",
+              type: "artistic-text",
+              x: 25,
+              y: 20,
+              scale: 1.0,
+              rotation: 0,
+              zIndex: 2,
+              text: "✨ LUCCICHIO ✨",
+              color: "#e28cfc",
+              fontSize: 22,
+              stylePreset: "fairy"
+            },
+            {
+              id: "vampiro",
+              type: "artistic-text",
+              x: 65,
+              y: 40,
+              scale: 1.3,
+              rotation: -8,
+              zIndex: 4,
+              text: "SBRROOOM!",
+              color: "#38bdf8",
+              fontSize: 30,
+              stylePreset: "bubble"
+            }
+          ]
+        }
+      ]
+    };
+
+    // Mapping key premade background values of the app to stunning Tailwind / CSS gradients
+    const VIEW_PREMADE_BACKGROUNDS = {
+      fairytale: "linear-gradient(to top, #fbc2eb 0%, #a6c1ee 100%)", // Fairy pastel pink blue
+      sky: "radial-gradient(circle at 50% 120%, #4facfe 0%, #00f2fe 100%)", // Sunny cloud blue
+      darksky: "radial-gradient(circle at 50% 30%, #0f172a 0%, #020617 100%)", // Starry space midnight
+      forest: "linear-gradient(to bottom, #11998e 0%, #38ef7d 100%)", // Forest lush green glow
+      castle: "linear-gradient(to bottom, #141e30 0%, #243b55 100%)", // Deep twilight blue medieval
+      candy: "linear-gradient(to top, #fdcbf1 0%, #e6dee9 100%)", // Sweet candy mountain pastel pink
+      underwater: "radial-gradient(circle, #0052d4 0%, #4364f7 50%, #6fb1fc 100%)", // Sea bubble glow
+      desert: "linear-gradient(120deg, #f6d365 0%, #fda085 100%)", // Sandy sunset warm
+      volcano: "radial-gradient(circle, #f12711 0%, #f5af19 100%)" // Lava lava crackly orange-black
+    };
+
+    // Global state
+    let currentBook = BACKUP_SAMPLE_BOOK;
+    let currentPageIndex = 0;
+
+    // ----------------------------------------------------
+    // INLINE STYLE EMOJI ASSISTANT ENGINE (Identical matching logic)
+    // ----------------------------------------------------
+    const getInlineEmoji = (word, preset) => {
+      const w = word.toLowerCase();
+      if (w.includes('drago')) return { left: '🐉', right: '🐉' };
+      if (w.includes('fuoco') || w.includes('fiamm') || w.includes('brucia')) return { left: '🔥', right: '🔥' };
+      if (w.includes('magi') || w.includes('fata') || w.includes('scintill') || w.includes('incant') || w.includes('fatina')) return { left: '✨', right: '✨' };
+      if (w.includes('tesor') || w.includes('coppa') || w.includes('regn') || w.includes('regin') || w.includes('re ')) return { left: '👑', right: '👑' };
+      if (w.includes('olo') || w.includes('oro') || w.includes('soldi') || w.includes('gemm') || w.includes('diamant')) return { left: '💎', right: '💎' };
+      if (w.includes('fantasm') || w.includes('spettr') || w.includes('paura') || w.includes('buio')) return { left: '👻', right: '👻' };
+      if (w.includes('mostr') || w.includes('zombie') || w.includes('streg') || w.includes('orco')) return { left: '🧟', right: '🧟' };
+      if (w.includes('boom') || w.includes('sboom') || w.includes('crash') || w.includes('colpo') || w.includes('esplod') || w.includes('sbrum')) return { left: '💥', right: '💥' };
+      if (w.includes('boll') || w.includes('acqua') || w.includes('sapone')) return { left: '🫧', right: '🫧' };
+      if (w.includes('ors') || w.includes('gatto') || w.includes('cane') || w.includes('animal') || w.includes('cucciolo') || w.includes('orsetto')) return { left: '🧸', right: '🧸' };
+      if (w.includes('cavall') || w.includes('unicorn')) return { left: '🦄', right: '🦄' };
+
+      switch (preset) {
+        case 'comic': return { left: '⚡️', right: '⚡️' };
+        case 'fairy': return { left: '✨', right: '✨' };
+        case 'spooky': return { left: '🕷️', right: '🕷️' };
+        case 'gold': return { left: '👑', right: '👑' };
+        case 'antique': return { left: '📜', right: '📜' };
+        case 'bubble': return { left: '🫧', right: '🫧' };
+        default: return { left: '✨', right: '✨' };
+      }
+    };
+
+    // ----------------------------------------------------
+    // INITIALIZATION & ONLOAD DISPATCHER
+    // ----------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. Check for URL Parameter "?book=https://..." or "?url=https://..."
+      const urlParams = new URLSearchParams(window.location.search);
+      const bookUrl = urlParams.get('book') || urlParams.get('url');
+      
+      if (bookUrl) {
+        setSelectorValue('CUSTOM_URL');
+        document.getElementById('customBookUrl').value = bookUrl;
+        fetchBookFromUrl(bookUrl);
+      } else {
+        // Render sample layout
+        loadBookData(BACKUP_SAMPLE_BOOK);
+      }
+
+      // Add keyboard controls listener
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') changePage(1);
+        if (e.key === 'ArrowLeft') changePage(-1);
+      });
+    });
+
+    function setSelectorValue(val) {
+      const select = document.getElementById('bookSelector');
+      select.value = val;
+      updateControlInputsVisibility(val);
+    }
+
+    // ----------------------------------------------------
+    // CONTROL INPUT VISIBILITIES based on drop-down choice
+    // ----------------------------------------------------
+    function loadSelectedBook() {
+      const type = document.getElementById('bookSelector').value;
+      updateControlInputsVisibility(type);
+
+      if (type === 'SAMPLE_LOCAL') {
+        loadBookData(BACKUP_SAMPLE_BOOK);
+      } else if (type === 'UPLOAD_FILE') {
+        triggerFileUpload();
+      }
+    }
+
+    function updateControlInputsVisibility(type) {
+      const urlContainer = document.getElementById('urlInputContainer');
+      const uploadBtn = document.getElementById('uploadBtn');
+
+      if (type === 'CUSTOM_URL') {
+        urlContainer.classList.remove('hidden');
+        uploadBtn.classList.add('hidden');
+      } else if (type === 'UPLOAD_FILE') {
+        urlContainer.classList.add('hidden');
+        uploadBtn.classList.remove('hidden');
+      } else {
+        urlContainer.classList.add('hidden');
+        uploadBtn.classList.add('hidden');
+      }
+    }
+
+    // ----------------------------------------------------
+    // FLOW LOADERS (FROM WEB / LOCAL FILE / PRESET)
+    // ----------------------------------------------------
+    function fetchBookFromCustomUrl() {
+      const url = document.getElementById('customBookUrl').value.trim();
+      if (!url) return alert("Inserisci un link valido!");
+      fetchBookFromUrl(url);
+    }
+
+    async function fetchBookFromUrl(url) {
+      showLoading(true);
+      hideError();
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Risposta di rete non valida (stato " + response.status + ")");
+        const data = await response.json();
+        
+        // Quick Schema validation check
+        if (!data || !Array.isArray(data.pages)) {
+          throw new Error("Il file JSON non contiene pagine valide della struttura Cantastorie.");
+        }
+        
+        loadBookData(data);
+      } catch (err) {
+        console.error(err);
+        showError(`Impossibile scaricare o decodificare il JSON da questo URL.\nErrore: ${err.message}\n(Nota: Assicurati del supporto CORS sul server di destinazione!)`);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function triggerFileUpload() {
+      document.getElementById('localBookUploader').click();
+    }
+
+    function handleLocalFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      showLoading(true);
+      hideError();
+
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!data || !Array.isArray(data.pages)) {
+            throw new Error("La struttura del libro esportato non è valida.");
+          }
+          loadBookData(data);
+        } catch (err) {
+          showError("Questo file non sembra essere un libro JSON valido del Cantastorie.\nDettaglio: " + err.message);
+        } finally {
+          showLoading(false);
+        }
+      };
+
+      reader.onerror = function() {
+        showError("Errore hardware nel caricamento locale del file.");
+        showLoading(false);
+      };
+
+      reader.readAsText(file);
+    }
+
+    function reloadBook() {
+      currentPageIndex = 0;
+      renderCurrentPage();
+    }
+
+    function resetToSample() {
+      setSelectorValue('SAMPLE_LOCAL');
+      hideError();
+      loadBookData(BACKUP_SAMPLE_BOOK);
+    }
+
+    // ----------------------------------------------------
+    // DATA RENDERING CONTROLLERS
+    // ----------------------------------------------------
+    function loadBookData(book) {
+      currentBook = book;
+      currentPageIndex = 0;
+      
+      // Update Main Header Details
+      document.getElementById('viewBookTitle').innerText = book.title || "Libro Senza Titolo";
+      document.getElementById('viewBookAuthor').innerText = book.author ? `scritto da ${book.author}` : "Cantastorie Anonimo";
+
+      // Configure orientation class
+      const stage = document.getElementById('pageCanvas');
+      if (book.orientation === 'portrait') {
+        stage.classList.add('portrait');
+      } else {
+        stage.classList.remove('portrait');
+      }
+
+      hideError();
+      renderCurrentPage();
+    }
+
+    function renderCurrentPage() {
+      if (!currentBook || !currentBook.pages || currentBook.pages.length === 0) {
+        showError("Questo libro non contiene pagine!");
+        return;
+      }
+
+      const page = currentBook.pages[currentPageIndex];
+      const backgroundEl = document.getElementById('canvasBackground');
+      const itemsHolder = document.getElementById('canvasItemsHolder');
+
+      // Clear layout elements
+      itemsHolder.innerHTML = '';
+      document.getElementById('narrativeTop').innerHTML = '';
+      document.getElementById('narrativeBottom').innerHTML = '';
+
+      // 1. SET UP THE PAGE BACKGROUND
+      if (page.backgroundType === 'color') {
+        backgroundEl.style.backgroundImage = 'none';
+        backgroundEl.style.backgroundColor = page.backgroundValue || '#1e293b';
+      } else if (page.backgroundType === 'premade') {
+        backgroundEl.style.backgroundColor = 'transparent';
+        const premadeGrad = VIEW_PREMADE_BACKGROUNDS[page.backgroundValue] || VIEW_PREMADE_BACKGROUNDS.fairytale;
+        backgroundEl.style.backgroundImage = premadeGrad;
+      } else {
+        // Absolute custom image (Standard URL or cached Base64 upload)
+        backgroundEl.style.backgroundColor = 'transparent';
+        backgroundEl.style.backgroundImage = `url("${page.backgroundValue}")`;
+      }
+
+      // 2. SET UP NARRATIVE STORY WRAPPER (Top / Bottom)
+      if (page.narrativeText && page.narrativePosition !== 'floating-hidden') {
+        const targetSection = page.narrativePosition === 'top' ? 'narrativeTop' : 'narrativeBottom';
+        const narrativeDiv = document.getElementById(targetSection);
+
+        // Parse & inject beautiful styled HTML tags
+        const parsedTextHTML = parseArtisticNarrativeText(page.narrativeText);
+        
+        let containerStyle = 'glass-panel p-4 md:p-5 rounded-2xl border border-white/5 shadow-lg';
+        if (page.narrativeStyle === 'parchment') {
+          containerStyle = 'narrative-parchment p-4 md:p-5 rounded-xl border-l-[6px] border-r-[6px] border-amber-900 shadow-md text-amber-950';
+        } else if (page.narrativeStyle === 'transparent') {
+          containerStyle = 'p-3 text-white text-center drop-shadow-lg';
+        }
+
+        narrativeDiv.innerHTML = `
+          <div class="${containerStyle} text-sm md:text-base leading-relaxed tracking-wide text-center">
+            ${parsedTextHTML}
+          </div>
+        `;
+      }
+
+      // 3. SET UP CHARACTERS & ARTISTIC TEXT LABELS (DRAG AND DROP)
+      const items = page.items || [];
+      items.forEach(item => {
+        if (item.type === 'character') {
+          // Render character image (it's base64 or custom asset url)
+          const img = document.createElement('img');
+          img.src = item.src;
+          img.alt = item.name || "Elemento";
+          img.className = "absolute origin-center transition-all hover:scale-105 pointer-events-auto cursor-pointer";
+          
+          let transformStr = `translate(-50%, -50%) scale(${item.scale || 1}) rotate(${item.rotation || 0}deg)`;
+          if (item.isFlipped) {
+            transformStr += " scaleX(-1)";
+          }
+
+          // Visual coordinates
+          img.style.left = `${item.x}%`;
+          img.style.top = `${item.y}%`;
+          img.style.transform = transformStr;
+          img.style.width = "18%"; // matches standard responsive layout sizes
+          img.style.zIndex = item.zIndex || 2;
+          img.style.filter = "drop-shadow(2px 5px 10px rgba(0,0,0,0.45))";
+
+          itemsHolder.appendChild(img);
+
+        } else if (item.type === 'artistic-text') {
+          // Render isolated big stickers
+          const div = document.createElement('div');
+          div.className = "absolute origin-center select-none pointer-events-auto";
+          div.style.left = `${item.x}%`;
+          div.style.top = `${item.y}%`;
+          div.style.zIndex = item.zIndex || 5;
+
+          const innerSpan = document.createElement('span');
+          innerSpan.innerText = item.text;
+          
+          let preset = item.stylePreset || 'holo';
+          const em = getInlineEmoji(item.text, preset);
+          
+          // Prepend values
+          innerSpan.innerText = `${em.left ? em.left + ' ' : ''}${item.text}${em.right ? ' ' + em.right : ''}`;
+
+          // Styling standard presets matching PageCanvas.tsx
+          applyStickerPresetStyles(innerSpan, preset);
+
+          // Apply font size scale
+          const customFontSz = item.fontSize ? `${item.fontSize}px` : '24px';
+          innerSpan.style.fontSize = `calc(${customFontSz} * 0.7)`;
+
+          div.appendChild(innerSpan);
+
+          // Translate transforms responsive
+          div.style.transform = `translate(-50%, -50%) scale(${item.scale || 1}) rotate(${item.rotation || 0}deg)`;
+          itemsHolder.appendChild(div);
+        }
+      });
+
+      // 4. NAVIGATION BAR CONTROLLER
+      document.getElementById('prevBtn').disabled = currentPageIndex === 0;
+      document.getElementById('nextBtn').disabled = currentPageIndex === currentBook.pages.length - 1;
+
+      // Update Pagination Indicators
+      document.getElementById('pageIndexDisplay').innerText = `Pagina ${currentPageIndex + 1} di ${currentBook.pages.length}`;
+      renderPaginationDots();
+    }
+
+    // ----------------------------------------------------
+    // STYLE PRESENTS APPLICATION (Pure Javascript matching Vite CSS exactly)
+    // ----------------------------------------------------
+    function applyStickerPresetStyles(span, preset) {
+      span.style.display = 'inline-flex';
+      span.style.alignItems = 'center';
+      span.style.gap = '6px';
+      span.style.padding = '6px 12px';
+      span.style.borderRadius = '8px';
+      span.style.fontWeight = '900';
+      span.style.userSelect = 'none';
+      span.style.boxSizing = 'border-box';
+      span.style.whiteSpace = 'nowrap';
+      span.style.boxShadow = '3px 4px 10px rgba(0,0,0,0.3)';
+
+      if (preset === 'comic') {
+        span.style.fontFamily = '"Impact", "Arial Black", sans-serif';
+        span.style.textTransform = 'uppercase';
+        span.style.fontStyle = 'italic';
+        span.style.backgroundColor = '#FF5722';
+        span.style.color = '#fff6de';
+        span.style.border = '2px solid #000';
+        span.style.boxShadow = '3px 3px 0px #000, 2px 5px 10px rgba(0,0,0,0.3)';
+        span.style.textShadow = '2px 2px 0px #000';
+      } else if (preset === 'fairy') {
+        span.style.fontFamily = '"Georgia", serif';
+        span.style.fontStyle = 'italic';
+        span.style.color = '#fff';
+        span.style.backgroundImage = 'linear-gradient(to right, #F472B6, #D946EF, #6366F1)';
+        span.style.border = '1px solid rgba(255, 255, 255, 0.4)';
+        span.style.borderRadius = '30px'; 
+        span.style.boxShadow = '0px 0px 12px rgba(236,72,153,0.85)';
+        span.style.textShadow = '1px 1px 2px rgba(131,24,67,0.4)';
+      } else if (preset === 'spooky') {
+        span.style.fontFamily = '"Courier New", monospace';
+        span.style.textTransform = 'uppercase';
+        span.style.color = '#A3E635';
+        span.style.backgroundColor = '#1A1124';
+        span.style.border = '2px solid #A3E635';
+        span.style.boxShadow = '3px 3px 0px #9333EA';
+        span.style.textShadow = '2px 2px 0px #020617';
+      } else if (preset === 'gold') {
+        span.style.fontFamily = '"Arial Black", sans-serif';
+        span.style.textTransform = 'uppercase';
+        span.style.color = '#FCD34D';
+        span.style.backgroundColor = '#2D1B18';
+        span.style.border = '2px solid #E19E20';
+        span.style.boxShadow = '2px 2px 6px rgba(0,0,0,0.6)';
+        span.style.backgroundImage = 'radial-gradient(circle, #3e2723 30%, #1d100d 100%)';
+      } else if (preset === 'antique') {
+        span.style.fontFamily = '"Times New Roman", "Georgia", serif';
+        span.style.fontStyle = 'italic';
+        span.style.color = '#3E2723';
+        span.style.backgroundColor = '#F5E6C4';
+        span.style.borderLeft = '4px solid #7C5A34';
+        span.style.borderRight = '4px solid #7C5A34';
+        span.style.borderTop = '1px solid #7C5A34';
+        span.style.borderBottom = '1px solid #7C5A34';
+        span.style.borderRadius = '4px';
+        span.style.boxShadow = '2px 2px 4px rgba(0,0,0,0.15)';
+      } else if (preset === 'bubble') {
+        span.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+        span.style.color = '#FFFFFF';
+        span.style.backgroundImage = 'linear-gradient(to bottom, #7DD3FC, #38BDF8, #0284C7)';
+        span.style.border = '2.5px solid #FFFFFF';
+        span.style.borderRadius = '30px';
+        span.style.boxShadow = 'inset -2px -3px 6px rgba(0,0,0,0.35), 2px 3px 5px rgba(2,132,199,0.45)';
+        span.style.textShadow = '1px 1px 2px rgba(2,132,199,0.5)';
+      } else {
+        // Holographic Sparkly Star Sticker default
+        span.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+        span.style.textTransform = 'uppercase';
+        span.style.color = '#FFFFFF';
+        span.style.backgroundColor = '#E63946';
+        span.style.border = '2px solid #1A1A1A';
+        span.style.boxShadow = '3px 3px 0px #1A1A1A';
+      }
+    }
+
+    // ----------------------------------------------------
+    // PARSE INLINE STORIES AND REPLACE WITH COMPACT WORD BADGES
+    // ----------------------------------------------------
+    function parseArtisticNarrativeText(text) {
+      if (!text) return '';
+      // Matches *preset:word* or *word*
+      const parts = text.split(/(\*[^*]+\*)/g);
+      
+      return parts.map(part => {
+        if (part.startsWith('*') && part.endsWith('*')) {
+          const inner = part.slice(1, -1);
+          let stylePreset = 'holo';
+          let cleanText = inner;
+          
+          if (inner.includes(':')) {
+            const firstColon = inner.indexOf(':');
+            const prefix = inner.substring(0, firstColon).trim();
+            const allowedPresets = ['comic', 'fairy', 'spooky', 'gold', 'antique', 'bubble', 'holo'];
+            if (allowedPresets.includes(prefix)) {
+              stylePreset = prefix;
+              cleanText = inner.substring(firstColon + 1);
+            }
+          }
+
+          // Clean separators (like spaces in words in double colons)
+          cleanText = cleanText.split(':').join(' ');
+
+          const em = getInlineEmoji(cleanText, stylePreset);
+          const leftEm = em.left ? `<span class="opacity-95 mr-1">${em.left}</span>` : '';
+          const rightEm = em.right ? `<span class="opacity-95 ml-1">${em.right}</span>` : '';
+
+          // Create styling tags directly
+          let cssClass = "";
+          let inlineStyle = "display: inline-flex; align-items: center; margin: 2px 5px; vertical-align: middle;";
+
+          if (stylePreset === 'comic') {
+            cssClass = "font-sans font-black tracking-wide uppercase px-2.5 py-1 rounded bg-[#FF5722] text-amber-50 border-2 border-black rotate-[-1.5deg] hover:rotate-[2deg] duration-200 transition-all shadow-[2.5px_2.5px_0px_#000]";
+            inlineStyle += "font-style: italic; font-size: 95%; text-shadow: 1.5px 1.5px 0px #000;";
+          } else if (stylePreset === 'fairy') {
+            cssClass = "font-serif italic font-extrabold px-3 py-1 rounded-full bg-gradient-to-r from-pink-400 via-fuchsia-400 to-indigo-400 text-white shadow-[0_0_10px_rgba(236,72,153,0.7)] border border-white/20 animate-pulse";
+            inlineStyle += "font-size: 92%; text-shadow: 1px 1px 1px rgba(131,24,67,0.4);";
+          } else if (stylePreset === 'spooky') {
+            cssClass = "font-mono text-[#A3E635] tracking-widest font-black uppercase px-2 py-0.5 border-2 border-[#A3E635] bg-[#1A1124] rotate-[1deg] shadow-[3px_3px_0_#9333EA] rounded-md";
+            inlineStyle += "font-size: 92%; text-shadow: 2.5px 2.5px 0px #020617;";
+          } else if (stylePreset === 'gold') {
+            cssClass = "px-2.5 py-0.5 bg-[#2D1B18] border-2 border-[#E19E20] shadow-[2px_2px_4px_rgba(0,0,0,0.6)] rounded-sm font-sans font-extrabold tracking-wide uppercase";
+            inlineStyle += "font-size: 92%; background-image: radial-gradient(#3e2723, #110806);";
+            cleanText = `<span style="background: linear-gradient(to right, #fcd34d, #fef08a, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${cleanText}</span>`;
+          } else if (stylePreset === 'antique') {
+            cssClass = "font-serif text-[#3E2723] font-black tracking-wide border-x-4 border-y border-[#7C5A34] bg-[#F5E6C4] px-2 py-0.5 shadow-[1.5px_1.5px_3px_rgba(0,0,0,0.15)] rounded-sm";
+            inlineStyle += "font-size: 92%;";
+          } else if (stylePreset === 'bubble') {
+            cssClass = "font-sans font-black rounded-full px-3 py-0.5 bg-gradient-to-b from-[#7DD3FC] via-[#38BDF8] to-[#0284C7] text-white border-2 border-white shadow-[inset_-1.5px_-2px_4px_rgba(0,0,0,0.3),_2px_2px_4px_rgba(2,132,199,0.4)]";
+            inlineStyle += "font-size: 90%; text-shadow: 1px 1px 1px rgba(2,132,199,0.5);";
+          } else {
+            cssClass = "font-sans font-black tracking-wide uppercase px-2.5 py-0.5 rounded bg-[#E63946] text-white shadow-[2px_2px_0px_#1A1A1A] border-2 border-[#1A1A1A]";
+            inlineStyle += "font-size: 92%;";
+          }
+
+          return `<span class="${cssClass} sticker-hover cursor-pointer select-none" style="${inlineStyle}">${leftEm} ${cleanText} ${rightEm}</span>`;
+        }
+        return `<span>${part}</span>`;
+      }).join('');
+    }
+
+    // ----------------------------------------------------
+    // PAGINATION HANDLERS
+    // ----------------------------------------------------
+    function changePage(direction) {
+      const targetIndex = currentPageIndex + direction;
+      if (targetIndex >= 0 && targetIndex < currentBook.pages.length) {
+        currentPageIndex = targetIndex;
+        renderCurrentPage();
+      }
+    }
+
+    function jumpToPage(index) {
+      if (index >= 0 && index < currentBook.pages.length) {
+        currentPageIndex = index;
+        renderCurrentPage();
+      }
+    }
+
+    function renderPaginationDots() {
+      const container = document.getElementById('paginationDots');
+      container.innerHTML = '';
+      
+      currentBook.pages.forEach((_, index) => {
+        const dot = document.createElement('button');
+        dot.onclick = () => jumpToPage(index);
+        dot.className = `w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+          index === currentPageIndex 
+            ? 'bg-amber-300 scale-125 shadow-[0_0_8px_#fcd34d]' 
+            : 'bg-purple-100/30 hover:bg-purple-100/60'
+        }`;
+        dot.title = `Vai a pagina ${index + 1}`;
+        container.appendChild(dot);
+      });
+    }
+
+    // ----------------------------------------------------
+    // SYSTEM UTILITIES (FullScreen, Loaders, Toggles)
+    // ----------------------------------------------------
+    function showLoading(show) {
+      const loader = document.getElementById('loadingOverlay');
+      if (show) loader.classList.remove('hidden');
+      else loader.classList.add('hidden');
+    }
+
+    function showError(msg) {
+      const errEl = document.getElementById('errorMessage');
+      const stageEl = document.getElementById('readerStage');
+      
+      document.getElementById('errorText').innerText = msg;
+      errEl.classList.remove('hidden');
+      stageEl.classList.add('hidden');
+    }
+
+    function hideError() {
+      document.getElementById('errorMessage').classList.add('hidden');
+      document.getElementById('readerStage').classList.remove('hidden');
+    }
+
+    function toggleFullscreen() {
+      const element = document.getElementById('pageCanvas');
+      if (!document.fullscreenElement) {
+        element.requestFullscreen().catch(err => {
+          alert(`Impossibile attivare lo schermo intero: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+  </script>
+</body>
+</html>
