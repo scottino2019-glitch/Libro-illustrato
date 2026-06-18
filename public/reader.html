@@ -32,6 +32,7 @@
 
     /* Premium Page aspect ratios */
     .book-stage {
+      container-type: inline-size;
       aspect-ratio: 4 / 3; /* Landscape standard default */
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
@@ -39,6 +40,48 @@
     .book-stage.portrait {
       aspect-ratio: 3 / 4; /* Portrait scale */
       max-height: 80vh;
+    }
+
+    /* Premium Fullscreen styles for whole reader controls + scroll stage */
+    #readerStage:fullscreen {
+      background-color: #0d061f !important;
+      padding: 1.5rem 1rem !important;
+      overflow-y: auto !important;
+      width: 100% !important;
+      height: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+    }
+    #readerStage:-webkit-full-screen {
+      background-color: #0d061f !important;
+      padding: 1.5rem 1rem !important;
+      overflow-y: auto !important;
+      width: 100% !important;
+      height: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+    }
+
+    /* Fallback pseudo-fullscreen class if browser iframe sandbox blocks native fullscreen toggle */
+    #readerStage.pseudo-fullscreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 9999;
+      background-color: #0a0319;
+      overflow-y: auto;
+      padding: 2.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #readerStage::backdrop {
+      background-color: #0d061f;
     }
 
     /* Custom animated narrative parchment styling */
@@ -389,6 +432,12 @@
 
       // Add keyboard controls listener
       window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const element = document.getElementById('readerStage');
+          if (element.classList.contains('pseudo-fullscreen')) {
+            element.classList.remove('pseudo-fullscreen');
+          }
+        }
         if (currentViewMode !== 'single') return;
         if (e.key === 'ArrowRight') changePage(1);
         if (e.key === 'ArrowLeft') changePage(-1);
@@ -585,7 +634,7 @@
         }
 
         narrativeDiv.innerHTML = `
-          <div class="${containerStyle} text-sm md:text-base leading-relaxed tracking-wide text-center">
+          <div class="${containerStyle} leading-relaxed tracking-wide text-center" style="font-size: clamp(13px, 2.2cqw, 24px); padding: calc(0.5rem + 1cqw);">
             ${parsedTextHTML}
           </div>
         `;
@@ -636,9 +685,11 @@
           // Styling standard presets matching PageCanvas.tsx
           applyStickerPresetStyles(innerSpan, preset);
 
-          // Apply font size scale
-          const customFontSz = item.fontSize ? `${item.fontSize}px` : '24px';
-          innerSpan.style.fontSize = `calc(${customFontSz} * 0.7)`;
+          // Proportional container queries scaling: an 800px wide book-stage has ~3% text size preset.
+          const itemFontSize = item.fontSize || 24;
+          const cqwSize = (itemFontSize / 800) * 100 * 0.85;
+          innerSpan.style.fontSize = `${cqwSize}cqw`;
+          innerSpan.style.whiteSpace = "nowrap";
 
           div.appendChild(innerSpan);
 
@@ -973,7 +1024,7 @@
           }
 
           const storyContent = `
-            <div class="${containerStyle} text-sm md:text-base leading-relaxed tracking-wide text-center">
+            <div class="${containerStyle} leading-relaxed tracking-wide text-center" style="font-size: clamp(13px, 2.2cqw, 24px); padding: calc(0.5rem + 1cqw);">
               ${parsedTextHTML}
             </div>
           `;
@@ -1019,8 +1070,11 @@
 
             applyStickerPresetStyles(innerSpan, preset);
 
-            const customFontSz = item.fontSize ? `${item.fontSize}px` : '24px';
-            innerSpan.style.fontSize = `calc(${customFontSz} * 0.7)`;
+            // Proportional container queries scaling: an 800px wide book-stage has ~3% text size preset.
+            const itemFontSize = item.fontSize || 24;
+            const cqwSize = (itemFontSize / 800) * 100 * 0.85;
+            innerSpan.style.fontSize = `${cqwSize}cqw`;
+            innerSpan.style.whiteSpace = "nowrap";
 
             div.appendChild(innerSpan);
             div.style.transform = `translate(-50%, -50%) scale(${item.scale || 1}) rotate(${item.rotation || 0}deg)`;
@@ -1037,14 +1091,27 @@
       });
     }
 
-    function toggleFullscreen() {
-      const element = document.getElementById('pageCanvas');
+    // Add listener for real fullscreen change to clear pseudo-fullscreen status
+    document.addEventListener('fullscreenchange', () => {
       if (!document.fullscreenElement) {
+        document.getElementById('readerStage').classList.remove('pseudo-fullscreen');
+      }
+    });
+
+    function toggleFullscreen() {
+      const element = document.getElementById('readerStage');
+      if (!document.fullscreenElement && !element.classList.contains('pseudo-fullscreen')) {
+        // Try native fullscreen
         element.requestFullscreen().catch(err => {
-          alert(`Impossibile attivare lo schermo intero: ${err.message}`);
+          console.warn("Native fullscreen blocked by sandbox, using pseudo-fullscreen fallback:", err.message);
+          element.classList.add('pseudo-fullscreen');
         });
       } else {
-        document.exitFullscreen();
+        // Toggle off
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(err => console.log(err));
+        }
+        element.classList.remove('pseudo-fullscreen');
       }
     }
   </script>
