@@ -281,7 +281,7 @@ export default function PageCanvas({
                     if (inner.includes(':')) {
                       const colonIndex = inner.indexOf(':');
                       const prefix = inner.substring(0, colonIndex).trim().toLowerCase();
-                      if (['comic', 'fairy', 'spooky', 'gold', 'antique', 'bubble'].includes(prefix)) {
+                      if (['comic', 'fairy', 'spooky', 'gold', 'antique', 'bubble', 'kablammo', 'nabla', 'splash'].includes(prefix)) {
                         stylePreset = prefix;
                         cleanText = inner.substring(colonIndex + 1);
                       }
@@ -399,6 +399,55 @@ export default function PageCanvas({
                           </span>
                         );
                         break;
+                      case 'kablammo':
+                        classes = 'font-kablammo text-pink-500 inline-flex items-center gap-1.5 select-none transform hover:scale-110 rotate-1 duration-200 transition-all';
+                        customStyleObj = {
+                          fontSize: '110%',
+                          display: 'inline-flex',
+                          margin: '2px 6px',
+                          verticalAlign: 'middle',
+                          textShadow: '2px 2px 0px #000'
+                        };
+                        wrapperElement = (
+                          <span className={classes} style={customStyleObj}>
+                            {leftEm && <span className="mr-0.5">{leftEm}</span>}
+                            <span>{cleanText}</span>
+                            {rightEm && <span className="ml-0.5">{rightEm}</span>}
+                          </span>
+                        );
+                        break;
+                      case 'nabla':
+                        classes = 'font-nabla inline-flex items-center gap-1.5 select-none transform hover:scale-115 duration-200 transition-all';
+                        customStyleObj = {
+                          fontSize: '115%',
+                          display: 'inline-flex',
+                          margin: '2px 6px',
+                          verticalAlign: 'middle'
+                        };
+                        wrapperElement = (
+                          <span className={classes} style={customStyleObj}>
+                            {leftEm && <span className="mr-0.5">{leftEm}</span>}
+                            <span>{cleanText}</span>
+                            {rightEm && <span className="ml-0.5">{rightEm}</span>}
+                          </span>
+                        );
+                        break;
+                      case 'splash':
+                        classes = 'font-splash text-[#0891B2] inline-flex items-center gap-1 select-none transform hover:scale-110 rotate-[-1deg] duration-200 transition-all';
+                        customStyleObj = {
+                          fontSize: '115%',
+                          display: 'inline-flex',
+                          margin: '2px 6px',
+                          verticalAlign: 'middle'
+                        };
+                        wrapperElement = (
+                          <span className={classes} style={customStyleObj}>
+                            {leftEm && <span className="mr-0.5">{leftEm}</span>}
+                            <span>{cleanText}</span>
+                            {rightEm && <span className="ml-0.5">{rightEm}</span>}
+                          </span>
+                        );
+                        break;
                       default: // holo rainbow sticker
                         classes = 'font-sans font-black tracking-wide uppercase px-2.5 py-1 rounded bg-[#E63946] text-white inline-flex items-center gap-1.5 select-none transform hover:scale-110 hover:-rotate-1 duration-200 transition-all shadow-[3px_3px_0px_#1A1A1A] border-2 border-[#1A1A1A]';
                         customStyleObj = {
@@ -431,8 +480,8 @@ export default function PageCanvas({
         )}
 
         {/* Page elements */}
-        {page.items
-          .sort((a, b) => a.zIndex - b.zIndex)
+        {[...page.items]
+          .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
           .map((item) => {
             const isSelected = selectedItemId === item.id;
             return (
@@ -447,7 +496,7 @@ export default function PageCanvas({
                   top: `${item.y}%`,
                   transform: `translate(-50%, -50%) rotate(${item.rotation}deg) scale(${item.scale})`,
                   cursor: isPrintMode ? 'default' : 'move',
-                  zIndex: isSelected ? 50 : 10 + item.zIndex,
+                  zIndex: 10 + (item.zIndex || 0),
                 }}
                 className={`transition-shadow p-1.5 rounded-lg ${
                   isSelected && !isPrintMode
@@ -550,16 +599,24 @@ export default function PageCanvas({
 
             {/* Z-Index layer arrangement */}
             <button
-              onClick={() => onUpdateItem(selectedItemObj.id, { zIndex: selectedItemObj.zIndex + 1 })}
+              onClick={() => {
+                const otherItems = page.items.filter((it) => it.id !== selectedItemObj.id);
+                const maxZ = otherItems.length > 0 ? Math.max(...otherItems.map((it) => it.zIndex || 0)) : 0;
+                onUpdateItem(selectedItemObj.id, { zIndex: maxZ + 1 });
+              }}
               title="Porta in Primo Piano"
-              className="p-1.5 hover:bg-violet-50 rounded-lg text-gray-600 hover:text-violet-600 transition-colors"
+              className="p-1.5 hover:bg-violet-50 rounded-lg text-gray-650 hover:text-violet-600 transition-colors"
             >
               <ArrowUp className="w-4 h-4" />
             </button>
             <button
-              onClick={() => onUpdateItem(selectedItemObj.id, { zIndex: Math.max(0, selectedItemObj.zIndex - 1) })}
+              onClick={() => {
+                const otherItems = page.items.filter((it) => it.id !== selectedItemObj.id);
+                const minZ = otherItems.length > 0 ? Math.min(...otherItems.map((it) => it.zIndex || 0)) : 0;
+                onUpdateItem(selectedItemObj.id, { zIndex: minZ - 1 });
+              }}
               title="Sposta in Secondo Piano"
-              className="p-1.5 hover:bg-violet-50 rounded-lg text-gray-600 hover:text-violet-600 transition-colors"
+              className="p-1.5 hover:bg-violet-50 rounded-lg text-gray-650 hover:text-violet-600 transition-colors"
             >
               <ArrowDown className="w-4 h-4" />
             </button>
