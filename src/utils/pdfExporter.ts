@@ -27,6 +27,9 @@ const getInlineEmoji = (word: string, preset: string): { left: string; right: st
     case 'gold': return { left: '👑', right: '👑' };
     case 'antique': return { left: '📜', right: '📜' };
     case 'bubble': return { left: '🫧', right: '🫧' };
+    case 'kablammo': return { left: '🤪', right: '🤪' };
+    case 'nabla': return { left: '🟥', right: '🟨' };
+    case 'splash': return { left: '💦', right: '💦' };
     default: return { left: '✨', right: '✨' };
   }
 };
@@ -130,7 +133,7 @@ export async function exportBookToPDF(
           if (inner.includes(':')) {
             const colonIndex = inner.indexOf(':');
             const prefix = inner.substring(0, colonIndex).trim().toLowerCase();
-            if (['comic', 'fairy', 'spooky', 'gold', 'antique', 'bubble'].includes(prefix)) {
+            if (['comic', 'fairy', 'spooky', 'gold', 'antique', 'bubble', 'kablammo', 'nabla', 'splash'].includes(prefix)) {
               stylePreset = prefix;
               cleanText = inner.substring(colonIndex + 1);
             }
@@ -213,6 +216,18 @@ export async function exportBookToPDF(
             span.style.borderRadius = '30px'; // full bubble pill
             span.style.boxShadow = 'inset -2px -3px 6px rgba(0,0,0,0.35), 2px 3px 5px rgba(2,132,199,0.45)';
             span.style.textShadow = '1px 1px 2px rgba(2,132,199,0.5)';
+          } else if (stylePreset === 'kablammo') {
+            span.style.fontFamily = '"Kablammo", sans-serif';
+            span.style.fontSize = '24px';
+            span.style.color = '#EC4899';
+            span.style.textShadow = '2px 2px 0px #000';
+          } else if (stylePreset === 'nabla') {
+            span.style.fontFamily = '"Nabla", sans-serif';
+            span.style.fontSize = '26px';
+          } else if (stylePreset === 'splash') {
+            span.style.fontFamily = '"Splash", sans-serif';
+            span.style.fontSize = '26px';
+            span.style.color = '#0891B2';
           } else { // holo default rainbow starburst sticker
             span.style.fontFamily = 'system-ui, -apple-system, sans-serif';
             span.style.fontSize = '24px';
@@ -365,6 +380,15 @@ export async function exportBookToPDF(
           textDiv.style.borderRadius = '16px';
           textDiv.style.padding = '5px 15px';
           textDiv.style.boxShadow = '4px 4px 0px #0284C7';
+        } else if (textItem.stylePreset === 'kablammo') {
+          textDiv.style.fontFamily = '"Kablammo", sans-serif';
+          textDiv.style.color = '#EC4899';
+          textDiv.style.textShadow = '2px 2px 0px #000000';
+        } else if (textItem.stylePreset === 'nabla') {
+          textDiv.style.fontFamily = '"Nabla", sans-serif';
+        } else if (textItem.stylePreset === 'splash') {
+          textDiv.style.fontFamily = '"Splash", sans-serif';
+          textDiv.style.color = '#0891B2';
         } else {
           textDiv.style.fontFamily = 'sans-serif';
           textDiv.style.fontWeight = '700';

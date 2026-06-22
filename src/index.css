@@ -1,10 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,450;1,600;1,900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;750&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,450;1,600;1,900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;750&family=Kablammo&family=Nabla&family=Splash&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-serif: "Playfair Display", Georgia, serif;
   --font-mono: "JetBrains Mono", monospace;
+  --font-kablammo: "Kablammo", sans-serif;
+  --font-nabla: "Nabla", sans-serif;
+  --font-splash: "Splash", sans-serif;
 }
 
 body {

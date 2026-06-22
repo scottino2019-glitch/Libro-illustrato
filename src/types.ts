@@ -22,7 +22,7 @@ export interface ArtisticTextItem extends BaseItem {
   text: string;
   color: string;
   fontSize: number; // in pixels or relative scale
-  stylePreset: 'comic' | 'fairy' | 'spooky' | 'gold' | 'antique' | 'bubble' | 'custom';
+  stylePreset: 'comic' | 'fairy' | 'spooky' | 'gold' | 'antique' | 'bubble' | 'custom' | 'kablammo' | 'nabla' | 'splash';
   fontFamily: string;
   fontWeight: string;
   shadowColor?: string;

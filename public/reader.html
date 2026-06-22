@@ -11,9 +11,14 @@
   <!-- Font pairings to match the premium app experience -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Kablammo&family=Nabla&family=Splash&display=swap" rel="stylesheet">
 
   <style>
+    /* Creative Font utilities */
+    .font-kablammo { font-family: 'Kablammo', sans-serif !important; }
+    .font-nabla { font-family: 'Nabla', sans-serif !important; }
+    .font-splash { font-family: 'Splash', sans-serif !important; }
+
     /* Styling configuration */
     body {
       font-family: 'Outfit', sans-serif;
@@ -676,6 +681,9 @@
         case 'gold': return { left: '👑', right: '👑' };
         case 'antique': return { left: '📜', right: '📜' };
         case 'bubble': return { left: '🫧', right: '🫧' };
+        case 'kablammo': return { left: '🤪', right: '🤪' };
+        case 'nabla': return { left: '🟥', right: '🟨' };
+        case 'splash': return { left: '💦', right: '💦' };
         default: return { left: '✨', right: '✨' };
       }
     };
@@ -1043,6 +1051,15 @@
         span.style.borderRadius = '30px';
         span.style.boxShadow = 'inset -2px -3px 6px rgba(0,0,0,0.35), 2px 3px 5px rgba(2,132,199,0.45)';
         span.style.textShadow = '1px 1px 2px rgba(2,132,199,0.5)';
+      } else if (preset === 'kablammo') {
+        span.style.fontFamily = '"Kablammo", sans-serif';
+        span.style.color = '#EC4899';
+        span.style.textShadow = '2px 2px 0px #000000';
+      } else if (preset === 'nabla') {
+        span.style.fontFamily = '"Nabla", sans-serif';
+      } else if (preset === 'splash') {
+        span.style.fontFamily = '"Splash", sans-serif';
+        span.style.color = '#0891B2';
       } else {
         // Holographic Sparkly Star Sticker default
         span.style.fontFamily = 'system-ui, -apple-system, sans-serif';
@@ -1071,7 +1088,7 @@
           if (inner.includes(':')) {
             const firstColon = inner.indexOf(':');
             const prefix = inner.substring(0, firstColon).trim();
-            const allowedPresets = ['comic', 'fairy', 'spooky', 'gold', 'antique', 'bubble', 'holo'];
+            const allowedPresets = ['comic', 'fairy', 'spooky', 'gold', 'antique', 'bubble', 'holo', 'kablammo', 'nabla', 'splash'];
             if (allowedPresets.includes(prefix)) {
               stylePreset = prefix;
               cleanText = inner.substring(firstColon + 1);
@@ -1108,6 +1125,15 @@
           } else if (stylePreset === 'bubble') {
             cssClass = "font-sans font-black rounded-full px-3 py-0.5 bg-gradient-to-b from-[#7DD3FC] via-[#38BDF8] to-[#0284C7] text-white border-2 border-white shadow-[inset_-1.5px_-2px_4px_rgba(0,0,0,0.3),_2px_2px_4px_rgba(2,132,199,0.4)]";
             inlineStyle += "font-size: 90%; text-shadow: 1px 1px 1px rgba(2,132,199,0.5);";
+          } else if (stylePreset === 'kablammo') {
+            cssClass = "font-kablammo text-pink-500 px-2 py-0.5 border border-pink-700 bg-white rotate-[1deg]";
+            inlineStyle += "font-size: 95%; text-shadow: 1.5px 1.5px 0px #000;";
+          } else if (stylePreset === 'nabla') {
+            cssClass = "font-nabla px-2 py-0.5";
+            inlineStyle += "font-size: 100%;";
+          } else if (stylePreset === 'splash') {
+            cssClass = "font-splash text-[#0891B2] px-2 py-0.5";
+            inlineStyle += "font-size: 102%;";
           } else {
             cssClass = "font-sans font-black tracking-wide uppercase px-2.5 py-0.5 rounded bg-[#E63946] text-white shadow-[2px_2px_0px_#1A1A1A] border-2 border-[#1A1A1A]";
             inlineStyle += "font-size: 92%;";

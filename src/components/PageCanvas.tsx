@@ -100,6 +100,12 @@ export default function PageCanvas({
         return 'font-serif text-amber-950 font-bold tracking-wide border-b-2 border-double border-amber-800 pb-0.5 select-none';
       case 'bubble':
         return 'font-extrabold rounded-2xl px-3 py-1.5 bg-gradient-to-tr from-sky-400 to-sky-200 text-white border-2 border-sky-600 shadow-[3px_3px_0_#0284c7] -rotate-1 select-none';
+      case 'kablammo':
+        return 'font-kablammo text-pink-500 [text-shadow:_2px_2px_0_#000] rotate-1 select-none';
+      case 'nabla':
+        return 'font-nabla select-none scale-110';
+      case 'splash':
+        return 'font-splash text-cyan-600 tracking-wider leading-none select-none';
       default:
         return 'font-sans font-bold select-none';
     }

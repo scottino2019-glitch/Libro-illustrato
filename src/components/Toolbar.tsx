@@ -34,7 +34,7 @@ export default function Toolbar({
   const [artText, setArtText] = useState('');
   const [quickArtText, setQuickArtText] = useState('');
   const [inlineArtisticText, setInlineArtisticText] = useState('');
-  const [textPreset, setTextPreset] = useState<'comic' | 'fairy' | 'spooky' | 'gold' | 'antique' | 'bubble' | 'custom'>('comic');
+  const [textPreset, setTextPreset] = useState<'comic' | 'fairy' | 'spooky' | 'gold' | 'antique' | 'bubble' | 'custom' | 'kablammo' | 'nabla' | 'splash'>('comic');
   const [customColor, setCustomColor] = useState('#ec4899');
   const [customSize, setCustomSize] = useState(36);
 
@@ -145,7 +145,7 @@ export default function Toolbar({
   };
 
   // Insert structured inline artistic styled tag in the narrative text
-  const handleInsertInlineArtistic = (stylePresetName: 'comic' | 'fairy' | 'spooky' | 'gold' | 'antique' | 'bubble') => {
+  const handleInsertInlineArtistic = (stylePresetName: 'comic' | 'fairy' | 'spooky' | 'gold' | 'antique' | 'bubble' | 'kablammo' | 'nabla' | 'splash') => {
     const word = inlineArtisticText.trim();
     if (!word) return;
 
@@ -382,6 +382,42 @@ export default function Toolbar({
                   >
                     <span className="font-extrabold text-[#E63946] block text-xs">FESTOSA 🎈</span>
                     <span className="text-[10px] opacity-75 font-normal block font-sans">Divertente / Colorata</span>
+                  </button>
+
+                  <button
+                    onClick={() => setTextPreset('kablammo')}
+                    className={`p-2.5 border rounded-none text-left transition-all ${
+                      textPreset === 'kablammo'
+                        ? 'border-[#1A1A1A] bg-[#1A1A1A]/5 text-[#1A1A1A] shadow-sm ring-1 ring-[#1A1A1A]'
+                        : 'border-[#D1CEC7] hover:border-[#1A1A1A] text-gray-700 bg-white'
+                    }`}
+                  >
+                    <span className="font-kablammo text-pink-500 block text-xs">KABLAMMO 🤪</span>
+                    <span className="text-[10px] opacity-75 font-normal block font-sans">Buffa / Cartoon</span>
+                  </button>
+
+                  <button
+                    onClick={() => setTextPreset('nabla')}
+                    className={`p-2.5 border rounded-none text-left transition-all ${
+                      textPreset === 'nabla'
+                        ? 'border-[#1A1A1A] bg-[#1A1A1A]/5 text-[#1A1A1A] shadow-sm ring-1 ring-[#1A1A1A]'
+                        : 'border-[#D1CEC7] hover:border-[#1A1A1A] text-gray-700 bg-white'
+                    }`}
+                  >
+                    <span className="font-nabla block text-xs">Nabla 🟥🟨</span>
+                    <span className="text-[10px] opacity-75 font-normal block font-sans">Colorata 3D</span>
+                  </button>
+
+                  <button
+                    onClick={() => setTextPreset('splash')}
+                    className={`p-2.5 border rounded-none text-left transition-all ${
+                      textPreset === 'splash'
+                        ? 'border-[#1A1A1A] bg-[#1A1A1A]/5 text-[#1A1A1A] shadow-sm ring-1 ring-[#1A1A1A]'
+                        : 'border-[#D1CEC7] hover:border-[#1A1A1A] text-gray-700 bg-white'
+                    }`}
+                  >
+                    <span className="font-splash text-[#0891B2] block text-xs">Splash 💦</span>
+                    <span className="text-[10px] opacity-75 font-normal block font-sans">Pittura / Ink</span>
                   </button>
 
                   <button
@@ -628,6 +664,33 @@ export default function Toolbar({
                       title="Stile bolla lucido e azzurro"
                     >
                       🫧 Bolla
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!inlineArtisticText.trim()}
+                      onClick={() => handleInsertInlineArtistic('kablammo')}
+                      className={`py-1.5 px-2 text-[10px] font-bold text-center border cursor-pointer border-pink-350 bg-pink-100 hover:bg-pink-200 text-pink-950 transition-colors ${!inlineArtisticText.trim() ? 'opacity-40 cursor-not-allowed' : ''}`}
+                      title="Stile buffo tipo cartone animato"
+                    >
+                      🤪 Kablammo
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!inlineArtisticText.trim()}
+                      onClick={() => handleInsertInlineArtistic('nabla')}
+                      className={`py-1.5 px-2 text-[10px] font-bold text-center border cursor-pointer border-rose-350 bg-rose-50 hover:bg-rose-100 text-rose-950 transition-colors ${!inlineArtisticText.trim() ? 'opacity-40 cursor-not-allowed' : ''}`}
+                      title="Stile Nabla colorato 3D"
+                    >
+                      🟥 Nabla
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!inlineArtisticText.trim()}
+                      onClick={() => handleInsertInlineArtistic('splash')}
+                      className={`py-1.5 px-2 text-[10px] font-bold text-center border cursor-pointer border-cyan-350 bg-cyan-100 hover:bg-cyan-200 text-cyan-950 transition-colors ${!inlineArtisticText.trim() ? 'opacity-40 cursor-not-allowed' : ''}`}
+                      title="Stile Splash pittura"
+                    >
+                      💦 Splash
                     </button>
                   </div>
                 </div>
